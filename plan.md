@@ -68,13 +68,13 @@ These notes reflect the current repository state before implementing this plan.
 
 - [x] Audited the current auth, conversation, OpenAI client, file/vector-store, MCP, functions, connector token, and code interpreter paths.
 - [x] Rewrote this plan around per-user provider configuration and broader isolation boundaries.
+- [x] Added encrypted user provider settings for `base_url` and `api_key`.
+- [x] Refactored OpenAI client creation to require `userId` and load that user's decrypted provider settings server-side.
+- [x] Added multi-conversation sidebar and explicit conversation switching.
+- [x] Enforced conversation context isolation in frontend state and server APIs.
 
 ### Pending
 
-- [ ] Add encrypted user provider settings for `base_url` and `api_key`.
-- [ ] Refactor OpenAI client creation to require `userId` and load that user's decrypted provider settings server-side.
-- [ ] Add multi-conversation sidebar and explicit conversation switching.
-- [ ] Enforce conversation context isolation in frontend state and server APIs.
 - [ ] Add user-owned vector store and uploaded file metadata tables.
 - [ ] Lock file-search routes behind auth and ownership checks.
 - [ ] Register code interpreter container files before allowing download.
@@ -503,19 +503,19 @@ Admins should see metadata, status, usage, and policy results, but not decrypted
 
 ### Phase 1: Credential and Provider Foundation
 
-- Add encryption helper and `CREDENTIAL_ENCRYPTION_KEY` validation.
-- Add provider settings migration.
-- Add user provider settings APIs.
-- Refactor `createOpenAIClient` to accept a user/provider context.
-- Update model listing and `/api/turn_response` to use user provider settings.
+- [x] Add encryption helper and `CREDENTIAL_ENCRYPTION_KEY` validation.
+- [x] Add provider settings migration.
+- [x] Add user provider settings APIs.
+- [x] Refactor `createOpenAIClient` to accept a user/provider context.
+- [x] Update model listing and `/api/turn_response` to use user provider settings.
 
 ### Phase 2: Conversation Sidebar and Context Isolation
 
-- Add sidebar UI and conversation list state.
-- Implement create/select/rename/archive flows.
-- Ensure conversation switches fully replace local context.
-- Add stale-stream guards keyed by conversation ID.
-- Add tests for cross-conversation isolation.
+- [x] Add sidebar UI and conversation list state.
+- [x] Implement create/select/rename/archive flows.
+- [x] Ensure conversation switches fully replace local context.
+- [x] Add stale-stream guards keyed by conversation ID.
+- [ ] Add tests for cross-conversation isolation.
 
 ### Phase 3: File, Vector Store, and Code Interpreter Isolation
 
