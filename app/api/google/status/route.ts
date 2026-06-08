@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { getSessionId, getTokenSet } from "@/lib/session";
+import { requireUser } from "@/lib/auth";
+import {
+  deleteConnectorTokens,
+  hasConnectorTokens,
+} from "@/lib/connector-credentials";
 
 export async function GET() {
-  const sessionId = await getSessionId();
-  const tokenSet = getTokenSet(sessionId);
-  const jar = await cookies();
-  const accessToken = jar.get("gc_access_token")?.value;
+  const user = await requireUser();
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env as Record<
     string,
     string | undefined
   >;
   const oauthConfigured = Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
   return NextResponse.json({
-    connected: Boolean(tokenSet || accessToken),
+    connected: await hasConnectorTokens(user.id, "google"),
     oauthConfigured,
   });
+}
+
+export async function DELETE() {
+  const user = await requireUser();
+  await deleteConnectorTokens(user.id, "google");
+  return NextResponse.json({ ok: true });
 }

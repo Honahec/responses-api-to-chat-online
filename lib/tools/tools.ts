@@ -101,7 +101,7 @@ export const getTools = async (toolsState: ToolsState, userId: string) => {
 
   if (googleIntegrationEnabled) {
     // Get fresh tokens (refresh if near expiry or missing access token when refresh exists)
-    const { accessToken } = await getFreshAccessToken();
+    const { accessToken } = await getFreshAccessToken(userId);
     tools.push(...getGoogleConnectorTools(accessToken!));
   }
 

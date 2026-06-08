@@ -6,22 +6,20 @@ import {
   randomState,
   buildAuthorizationUrl,
 } from "openid-client";
+import { requireUser } from "@/lib/auth";
 import {
   getGoogleClient,
   getRedirectUri,
   GOOGLE_SCOPES,
 } from "@/lib/connectors-auth";
-import { getOrCreateSessionId } from "@/lib/session";
 
 const STATE_COOKIE = "gc_oauth_state";
 const VERIFIER_COOKIE = "gc_oauth_verifier";
 
 export async function GET() {
+  await requireUser();
   const config = await getGoogleClient();
   const jar = await cookies();
-
-  // Ensure we have a session id cookie set
-  await getOrCreateSessionId();
 
   const state = randomState();
   const codeVerifier = randomPKCECodeVerifier();

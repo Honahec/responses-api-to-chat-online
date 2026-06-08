@@ -78,10 +78,10 @@ These notes reflect the current repository state before implementing this plan.
 - [x] Added user-owned MCP profiles with encrypted secrets and persisted approval policy.
 - [x] Moved custom function definitions to user-owned configuration.
 - [x] Executed custom functions server-side under user/conversation policy.
+- [x] Moved connector OAuth tokens into encrypted user-owned storage.
 
 ### Pending
 
-- [ ] Move connector OAuth tokens into encrypted user-owned storage.
 - [ ] Update quota and admin policy to work with user-owned provider settings and tools.
 - [ ] Add tests for cross-user and cross-conversation isolation.
 
@@ -536,10 +536,10 @@ Admins should see metadata, status, usage, and policy results, but not decrypted
 
 ### Phase 5: Connector Credential Storage
 
-- Move Google token storage into encrypted user-owned database rows.
-- Add connector status/revoke APIs.
-- Refresh connector tokens server-side.
-- Ensure connector tools are only emitted for the current user's active credential.
+- [x] Move Google token storage into encrypted user-owned database rows.
+- [x] Add connector status/revoke APIs.
+- [x] Refresh connector tokens server-side.
+- [x] Ensure connector tools are only emitted for the current user's active credential.
 
 ### Phase 6: Admin Policy, Audit, and Hardening
 
