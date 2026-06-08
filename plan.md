@@ -31,31 +31,23 @@
 - [x] Bound Responses API turns to an authenticated user-owned conversation.
 - [x] Added PocketID login gate in the frontend.
 - [x] Restore the latest server-persisted conversation after page refresh.
+- [x] Confirmed the OIDC provider: PocketID.
+- [x] Confirmed the PocketID group claim path: `groups`.
+- [x] Replaced in-memory/browser-only conversation state with server-persisted conversations.
+- [x] Persisted conversation snapshots after chat turns.
+- [x] Enforced per-user data isolation on every conversation API.
+- [x] Enforced per-user data isolation on every message API.
 - [x] Added admin user and per-user quota APIs.
 - [x] Enforced request-count, model allowlist, and tool allowlist quotas before Responses API calls.
 - [x] Added initial admin UI for users, quotas, and usage.
+- [x] Added admin APIs for users, quotas, usage, allowed models, and allowed tools.
 - [x] Added GitHub Actions workflow for Docker builds and GHCR publishing.
 - [x] Documented Docker, PocketID OIDC, Postgres, and GHCR deployment.
 - [x] Persist message rows from conversation snapshots and expose a user-scoped message listing API.
 
 ### Pending
 
-- [x] Confirm the OIDC provider: PocketID.
-- [x] Confirm the PocketID group claim path: `groups`.
-- [x] Add database migrations and a migration runner.
-- [x] Add Postgres connection helpers.
-- [x] Add repository functions.
-- [x] Implement OIDC login, callback, logout, and current-user APIs.
-- [x] Replace in-memory/browser-only conversation state with server-persisted conversations.
-- [x] Persist conversation snapshots after chat turns.
-- [x] Enforce per-user data isolation on every conversation API.
-- [x] Enforce per-user data isolation on every message API.
-- [x] Add quota enforcement before Responses API calls.
-- [x] Add admin APIs for users, quotas, usage, allowed models, and allowed tools.
-- [x] Add admin UI for users, quotas, usage, allowed models, and allowed tools.
-- [x] Add Dockerfile, `.dockerignore`, and Docker Compose files.
-- [x] Add GHCR publishing workflow.
-- [x] Document production deployment and required environment variables.
+- None.
 
 ## Non-Goals
 
