@@ -45,8 +45,7 @@ OIDC_ADMIN_GROUP=superadmin
 OIDC_USER_GROUP=chat_user
 OIDC_SCOPES="openid email profile groups"
 
-OPENAI_API_KEY=replace-me
-OPENAI_BASE_URL=https://api.openai.com/v1
+CREDENTIAL_ENCRYPTION_KEY=replace-with-openssl-rand-base64-32
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -129,4 +128,5 @@ The admin page can:
 - The app stores session token hashes in Postgres and the raw session token only in an HTTP-only cookie.
 - Chat access requires PocketID membership in `chat_user` or `superadmin`.
 - Admin access requires PocketID membership in `superadmin`.
-- `OPENAI_BASE_URL` should include the API version path, for example `/v1`, when the provider requires it.
+- Each user stores their own OpenAI-compatible provider `base_url` and API key in encrypted app storage.
+- User provider `base_url` values should include the API version path, for example `/v1`, when the provider requires it.

@@ -1,8 +1,10 @@
-import { createOpenAIClient } from "@/lib/openai";
+import { requireUser } from "@/lib/auth";
+import { createOpenAIClientForUser } from "@/lib/openai";
 
 export async function GET() {
   try {
-    const openai = createOpenAIClient();
+    const user = await requireUser();
+    const openai = await createOpenAIClientForUser(user.id);
     const response = await openai.models.list();
     const models = response.data
       .map((model) => ({

@@ -22,28 +22,18 @@ This app is meant to be used as a starting point to build a conversational assis
 
 ## How to use
 
-1. **Set up the OpenAI API:**
+1. **Set up provider credentials:**
 
    - If you're new to the OpenAI API, [sign up for an account](https://platform.openai.com/signup).
    - Follow the [Quickstart](https://platform.openai.com/docs/quickstart) to retrieve your API key.
+   - Each authenticated user configures their own OpenAI-compatible `base_url` and API key in the app.
 
-2. **Set the OpenAI API key:**
+2. **Set credential encryption:**
 
-   2 options:
-
-   - Set the `OPENAI_API_KEY` environment variable [globally in your system](https://platform.openai.com/docs/libraries#create-and-export-an-api-key)
-   - Set the `OPENAI_API_KEY` environment variable in the project: Create a `.env` file at the root of the project and add the following line (see `.env.example` for reference):
+   Create a `.env` file at the root of the project and set a strong encryption key for user-owned provider API keys and other secrets:
 
    ```bash
-   OPENAI_API_KEY=<your_api_key>
-   ```
-
-   If you need to use an OpenAI-compatible endpoint instead of the default API
-   host, also set `OPENAI_BASE_URL`. Use the API root expected by the OpenAI
-   SDK, usually including `/v1`:
-
-   ```bash
-   OPENAI_BASE_URL=https://api.openai.com/v1
+   CREDENTIAL_ENCRYPTION_KEY=$(openssl rand -base64 32)
    ```
 
 3. **Clone the Repository:**

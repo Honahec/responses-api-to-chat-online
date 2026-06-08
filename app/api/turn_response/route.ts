@@ -1,7 +1,10 @@
 import { getDeveloperPrompt, MODEL } from "@/config/constants";
 import { requireUser } from "@/lib/auth";
 import { getConversation } from "@/lib/conversations";
-import { createOpenAIClient } from "@/lib/openai";
+import {
+  createOpenAIClientForUser,
+  getDefaultModelForUser,
+} from "@/lib/openai";
 import { assertWithinQuota, recordRequestUsage } from "@/lib/quotas";
 import { getTools } from "@/lib/tools/tools";
 
@@ -22,7 +25,8 @@ export async function POST(request: Request) {
       });
     }
 
-    const model = toolsState?.selectedModel || MODEL;
+    const defaultModel = await getDefaultModelForUser(user.id);
+    const model = toolsState?.selectedModel || defaultModel || MODEL;
     await assertWithinQuota({ userId: user.id, model, toolsState });
 
     const tools = await getTools(toolsState);
@@ -32,7 +36,7 @@ export async function POST(request: Request) {
 
     console.log("Received messages:", messages);
 
-    const openai = createOpenAIClient();
+    const openai = await createOpenAIClientForUser(user.id);
 
     const events = await openai.responses.create({
       model,
