@@ -2,6 +2,7 @@ import { getDeveloperPrompt, MODEL } from "@/config/constants";
 import { requireUser } from "@/lib/auth";
 import { getConversation } from "@/lib/conversations";
 import { createOpenAIClient } from "@/lib/openai";
+import { assertWithinQuota, recordRequestUsage } from "@/lib/quotas";
 import { getTools } from "@/lib/tools/tools";
 
 export async function POST(request: Request) {
@@ -21,7 +22,11 @@ export async function POST(request: Request) {
       });
     }
 
+    const model = toolsState?.selectedModel || MODEL;
+    await assertWithinQuota({ userId: user.id, model, toolsState });
+
     const tools = await getTools(toolsState);
+    await recordRequestUsage({ userId: user.id, conversationId, model });
 
     console.log("Tools:", tools);
 
@@ -30,7 +35,7 @@ export async function POST(request: Request) {
     const openai = createOpenAIClient();
 
     const events = await openai.responses.create({
-      model: toolsState?.selectedModel || MODEL,
+      model,
       input: messages,
       instructions: getDeveloperPrompt(),
       tools,
