@@ -72,6 +72,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof Response) return error;
     console.error("Error in POST handler:", error);
     return new Response(
       JSON.stringify({
