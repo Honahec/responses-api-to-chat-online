@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { createUserVectorStore } from "@/lib/file-resources";
 import { createOpenAIClientForUser } from "@/lib/openai";
 
 export async function POST(request: Request) {
@@ -9,7 +10,18 @@ export async function POST(request: Request) {
     const vectorStore = await openai.vectorStores.create({
       name,
     });
-    return new Response(JSON.stringify(vectorStore), { status: 200 });
+    const userVectorStore = await createUserVectorStore({
+      userId: user.id,
+      providerVectorStoreId: vectorStore.id,
+      name: vectorStore.name || name,
+    });
+    return Response.json({
+      id: userVectorStore.id,
+      provider_vector_store_id: userVectorStore.provider_vector_store_id,
+      name: userVectorStore.name,
+      created_at: userVectorStore.created_at,
+      updated_at: userVectorStore.updated_at,
+    });
   } catch (error) {
     if (error instanceof Response) return error;
     console.error("Error creating vector store:", error);

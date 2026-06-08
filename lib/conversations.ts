@@ -1,5 +1,6 @@
 import { MODEL } from "@/config/constants";
 import { query, withTransaction } from "@/lib/db";
+import { registerContainerFilesFromItems } from "@/lib/file-resources";
 
 export type ConversationSummary = {
   id: string;
@@ -151,6 +152,13 @@ export async function saveConversationState({
         [conversationId, userId, role, JSON.stringify(item)]
       );
     }
+
+    await registerContainerFilesFromItems({
+      client,
+      userId,
+      conversationId,
+      items: [...chatMessages, ...conversationItems],
+    });
 
     return conversation;
   });

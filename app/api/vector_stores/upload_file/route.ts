@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { createUserFile } from "@/lib/file-resources";
 import { createOpenAIClientForUser } from "@/lib/openai";
 
 export async function POST(request: Request) {
@@ -15,8 +16,21 @@ export async function POST(request: Request) {
       file: new File([fileBlob], fileObject.name),
       purpose: "assistants",
     });
+    const userFile = await createUserFile({
+      userId: user.id,
+      providerFileId: file.id,
+      filename: fileObject.name,
+      purpose: "assistants",
+      sizeBytes: file.bytes ?? null,
+    });
 
-    return new Response(JSON.stringify(file), { status: 200 });
+    return Response.json({
+      id: userFile.id,
+      provider_file_id: userFile.provider_file_id,
+      filename: userFile.filename,
+      purpose: userFile.purpose,
+      size_bytes: userFile.size_bytes,
+    });
   } catch (error) {
     if (error instanceof Response) return error;
     console.error("Error uploading file:", error);

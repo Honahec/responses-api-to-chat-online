@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const model = toolsState?.selectedModel || defaultModel || MODEL;
     await assertWithinQuota({ userId: user.id, model, toolsState });
 
-    const tools = await getTools(toolsState);
+    const tools = await getTools(toolsState, user.id);
     await recordRequestUsage({ userId: user.id, conversationId, model });
 
     console.log("Tools:", tools);

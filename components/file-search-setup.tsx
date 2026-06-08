@@ -36,7 +36,7 @@ export default function FileSearchSetup() {
   return (
     <div>
       <div className="text-sm text-zinc-500">
-        Upload a file to create a new vector store, or use an existing one.
+        Upload a file to create a user-owned vector store.
       </div>
       <div className="flex items-center gap-2 mt-2 h-10">
         <div className="flex items-center gap-2 w-full">
@@ -69,7 +69,7 @@ export default function FileSearchSetup() {
             <div className="flex items-center gap-2">
               <Input
                 type="text"
-                placeholder="ID (vs_XXXX...)"
+                placeholder="Local store ID"
                 value={newStoreId}
                 onChange={(e) => setNewStoreId(e.target.value)}
                 className="border border-zinc-300 rounded text-sm bg-white"

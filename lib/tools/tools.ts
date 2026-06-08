@@ -2,12 +2,13 @@ import { toolsList } from "../../config/tools-list";
 import { ToolsState, WebSearchConfig } from "@/stores/useToolsStore";
 import { getFreshAccessToken } from "@/lib/connectors-auth";
 import { getGoogleConnectorTools } from "./connectors";
+import { getUserVectorStore } from "@/lib/file-resources";
 
 interface WebSearchTool extends WebSearchConfig {
   type: "web_search";
 }
 
-export const getTools = async (toolsState: ToolsState) => {
+export const getTools = async (toolsState: ToolsState, userId: string) => {
   const {
     webSearchEnabled,
     fileSearchEnabled,
@@ -39,9 +40,15 @@ export const getTools = async (toolsState: ToolsState) => {
   }
 
   if (fileSearchEnabled && vectorStore?.id) {
+    const userVectorStore = await getUserVectorStore(userId, vectorStore.id);
+    if (!userVectorStore) {
+      throw new Response(JSON.stringify({ error: "Vector store not found" }), {
+        status: 404,
+      });
+    }
     const fileSearchTool = {
       type: "file_search",
-      vector_store_ids: [vectorStore.id],
+      vector_store_ids: [userVectorStore.provider_vector_store_id],
     };
     tools.push(fileSearchTool);
   }

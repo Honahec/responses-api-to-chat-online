@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { getUserContainerFile } from "@/lib/file-resources";
 import { getProviderCredentials } from "@/lib/provider-settings";
 
 export async function GET(request: Request) {
@@ -12,6 +13,14 @@ export async function GET(request: Request) {
       return new Response(JSON.stringify({ error: "Missing file_id" }), {
         status: 400,
       });
+    }
+    const containerFile = await getUserContainerFile({
+      userId: user.id,
+      providerFileId: fileId,
+      providerContainerId: containerId,
+    });
+    if (!containerFile) {
+      return Response.json({ error: "File not found" }, { status: 404 });
     }
     const credentials = await getProviderCredentials(user.id);
     const url = containerId
@@ -27,7 +36,7 @@ export async function GET(request: Request) {
     return new Response(blob, {
       headers: {
         "Content-Type": res.headers.get("Content-Type") || "application/octet-stream",
-        "Content-Disposition": `attachment; filename=${filename ?? fileId}`,
+        "Content-Disposition": `attachment; filename=${filename ?? containerFile.filename ?? fileId}`,
       },
     });
   } catch (err) {

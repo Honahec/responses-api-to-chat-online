@@ -72,12 +72,12 @@ These notes reflect the current repository state before implementing this plan.
 - [x] Refactored OpenAI client creation to require `userId` and load that user's decrypted provider settings server-side.
 - [x] Added multi-conversation sidebar and explicit conversation switching.
 - [x] Enforced conversation context isolation in frontend state and server APIs.
+- [x] Added user-owned vector store and uploaded file metadata tables.
+- [x] Locked file-search routes behind auth and ownership checks.
+- [x] Registered code interpreter container files before allowing download.
 
 ### Pending
 
-- [ ] Add user-owned vector store and uploaded file metadata tables.
-- [ ] Lock file-search routes behind auth and ownership checks.
-- [ ] Register code interpreter container files before allowing download.
 - [ ] Add user-owned MCP profiles with encrypted secrets and persisted approval policy.
 - [ ] Move custom function definitions to user-owned configuration.
 - [ ] Execute custom functions server-side under user/conversation policy.
@@ -519,12 +519,12 @@ Admins should see metadata, status, usage, and policy results, but not decrypted
 
 ### Phase 3: File, Vector Store, and Code Interpreter Isolation
 
-- Add file/vector-store/container-file metadata tables.
-- Require auth on all file/vector-store routes.
-- Map local IDs to upstream IDs server-side.
-- Validate ownership in file-search tool construction.
-- Register code interpreter generated files.
-- Protect container file downloads with ownership checks.
+- [x] Add file/vector-store/container-file metadata tables.
+- [x] Require auth on all file/vector-store routes.
+- [x] Map local IDs to upstream IDs server-side.
+- [x] Validate ownership in file-search tool construction.
+- [x] Register code interpreter generated files.
+- [x] Protect container file downloads with ownership checks.
 
 ### Phase 4: User-Owned MCP and Function Configuration
 
