@@ -79,10 +79,10 @@ These notes reflect the current repository state before implementing this plan.
 - [x] Moved custom function definitions to user-owned configuration.
 - [x] Executed custom functions server-side under user/conversation policy.
 - [x] Moved connector OAuth tokens into encrypted user-owned storage.
+- [x] Updated quota and admin policy to work with user-owned provider settings and tools.
 
 ### Pending
 
-- [ ] Update quota and admin policy to work with user-owned provider settings and tools.
 - [ ] Add tests for cross-user and cross-conversation isolation.
 
 ## Architecture
@@ -543,10 +543,10 @@ Admins should see metadata, status, usage, and policy results, but not decrypted
 
 ### Phase 6: Admin Policy, Audit, and Hardening
 
-- Expand admin policy for provider domains, tools, files, MCP, functions, connectors, and code interpreter.
-- Add audit logs for credential/config changes.
-- Add rate limits and CSRF protections.
-- Add isolation tests and route-level regression tests.
+- [x] Expand admin policy for provider domains, tools, files, MCP, functions, connectors, and code interpreter.
+- [x] Add audit logs for credential/config changes.
+- [ ] Add rate limits and CSRF protections.
+- [ ] Add isolation tests and route-level regression tests.
 
 ## Open Questions
 

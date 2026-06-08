@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { authorizationCodeGrant } from "openid-client";
 import { requireUser } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import { saveConnectorTokens } from "@/lib/connector-credentials";
 import { getGoogleClient } from "@/lib/connectors-auth";
 import { OAuthTokens } from "@/lib/session";
@@ -52,6 +53,11 @@ export async function GET(request: NextRequest) {
       userId: user.id,
       connector: "google",
       tokens,
+    });
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: "connector.connected",
+      metadata: { connector: "google", scope: tokens.scope ?? null },
     });
 
     return NextResponse.redirect(new URL("/?connected=1", request.url));

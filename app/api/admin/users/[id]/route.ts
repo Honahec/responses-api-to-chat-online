@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import { query } from "@/lib/db";
 
 type RouteContext = {
@@ -8,7 +9,7 @@ type RouteContext = {
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { id } = await context.params;
     const result = await query(
       `select id, issuer, subject, email, name, role, groups, enabled, created_at, updated_at
@@ -21,6 +22,12 @@ export async function GET(_request: Request, context: RouteContext) {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    await recordAuditEvent({
+      actorUserId: admin.id,
+      targetUserId: id,
+      action: "admin.user.updated",
+      metadata: { enabled: user.enabled },
+    });
     return NextResponse.json({ user });
   } catch (error) {
     if (error instanceof Response) return error;

@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import {
   deleteUserMcpProfile,
   getUserMcpProfile,
@@ -27,6 +28,15 @@ export async function GET(_request: Request, context: RouteContext) {
     if (!profile) {
       return Response.json({ error: "MCP profile not found" }, { status: 404 });
     }
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: "mcp_profile.updated",
+      metadata: {
+        profile_id: profile.id,
+        server_label: profile.server_label,
+        server_url: profile.server_url,
+      },
+    });
     return Response.json({ profile });
   } catch (error) {
     if (error instanceof Response) return error;
@@ -67,6 +77,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const user = await requireUser();
     const { id } = await context.params;
     await deleteUserMcpProfile(user.id, id);
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: "mcp_profile.deleted",
+      metadata: { profile_id: id },
+    });
     return Response.json({ ok: true });
   } catch (error) {
     if (error instanceof Response) return error;
@@ -74,4 +89,3 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return Response.json({ error: "Failed to delete MCP profile" }, { status: 500 });
   }
 }
-

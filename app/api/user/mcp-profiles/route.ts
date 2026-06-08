@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import { listUserMcpProfiles, upsertUserMcpProfile } from "@/lib/user-tools";
 
 function parseAllowedTools(value: unknown) {
@@ -35,6 +36,15 @@ export async function POST(request: Request) {
       allowedTools: parseAllowedTools(body.allowed_tools),
       approvalPolicy: body.skip_approval ? "never" : "always",
     });
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: "mcp_profile.upserted",
+      metadata: {
+        profile_id: profile?.id,
+        server_label: profile?.server_label,
+        server_url: profile?.server_url,
+      },
+    });
     return Response.json({ profile }, { status: 201 });
   } catch (error) {
     if (error instanceof Response) return error;
@@ -45,4 +55,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

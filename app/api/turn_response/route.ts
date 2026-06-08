@@ -8,6 +8,7 @@ import {
 import { assertWithinQuota, recordRequestUsage } from "@/lib/quotas";
 import { getTools } from "@/lib/tools/tools";
 import { recordMcpApproval } from "@/lib/user-tools";
+import { assertToolsAllowedByAdminPolicy } from "@/lib/admin-policy";
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
 
     const defaultModel = await getDefaultModelForUser(user.id);
     const model = toolsState?.selectedModel || defaultModel || MODEL;
+    await assertToolsAllowedByAdminPolicy(toolsState);
     await assertWithinQuota({ userId: user.id, model, toolsState });
     for (const item of Array.isArray(messages) ? messages : []) {
       if (item?.type === "mcp_approval_response") {

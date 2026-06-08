@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { getAdminPolicy } from "@/lib/admin-policy";
 import { createUserFile } from "@/lib/file-resources";
 import { createOpenAIClientForUser } from "@/lib/openai";
 
@@ -8,6 +9,13 @@ export async function POST(request: Request) {
     const openai = await createOpenAIClientForUser(user.id);
     const { fileObject } = await request.json();
     const fileBuffer = Buffer.from(fileObject.content, "base64");
+    const policy = await getAdminPolicy();
+    if (
+      policy.file_upload_max_bytes != null &&
+      fileBuffer.byteLength > policy.file_upload_max_bytes
+    ) {
+      return Response.json({ error: "File is too large" }, { status: 413 });
+    }
     const fileBlob = new Blob([fileBuffer], {
       type: "application/octet-stream",
     });

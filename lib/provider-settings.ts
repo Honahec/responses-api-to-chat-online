@@ -4,6 +4,7 @@ import {
   encryptCredential,
   fingerprintCredential,
 } from "@/lib/credentials";
+import { assertProviderBaseURLAllowed } from "@/lib/admin-policy";
 import { query } from "@/lib/db";
 
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -112,6 +113,7 @@ export async function upsertProviderSettings({
   }
 
   const normalizedBaseURL = normalizeBaseURL(baseURL);
+  await assertProviderBaseURLAllowed(normalizedBaseURL);
   const result = await query<ProviderSettingsRow>(
     `insert into user_provider_settings (
        user_id,
@@ -140,4 +142,3 @@ export async function upsertProviderSettings({
 
   return publicSettings(result.rows[0]);
 }
-

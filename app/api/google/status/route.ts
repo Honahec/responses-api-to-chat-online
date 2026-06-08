@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import {
   deleteConnectorTokens,
   hasConnectorTokens,
@@ -21,5 +22,10 @@ export async function GET() {
 export async function DELETE() {
   const user = await requireUser();
   await deleteConnectorTokens(user.id, "google");
+  await recordAuditEvent({
+    actorUserId: user.id,
+    action: "connector.disconnected",
+    metadata: { connector: "google" },
+  });
   return NextResponse.json({ ok: true });
 }

@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import {
   getProviderSettings,
   upsertProviderSettings,
@@ -26,6 +27,14 @@ export async function PUT(request: Request) {
       apiKey: body.api_key,
       defaultModel: body.default_model,
     });
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: "provider_settings.updated",
+      metadata: {
+        base_url: settings.base_url,
+        api_key_fingerprint: settings.api_key_fingerprint,
+      },
+    });
     return Response.json({ settings });
   } catch (error) {
     if (error instanceof Response) return error;
@@ -36,4 +45,3 @@ export async function PUT(request: Request) {
     );
   }
 }
-
