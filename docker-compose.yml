@@ -13,6 +13,20 @@ services:
       timeout: 5s
       retries: 10
 
+  postgres-bootstrap:
+    image: postgres:17-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./scripts/postgres-bootstrap.sh:/usr/local/bin/postgres-bootstrap.sh:ro
+    command: ["sh", "/usr/local/bin/postgres-bootstrap.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   migrate:
     build:
       context: .
@@ -22,8 +36,8 @@ services:
     environment:
       DATABASE_URL: ${APP_DATABASE_URL:?APP_DATABASE_URL is required}
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-bootstrap:
+        condition: service_completed_successfully
 
   app:
     build:
@@ -36,8 +50,8 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-bootstrap:
+        condition: service_completed_successfully
       migrate:
         condition: service_completed_successfully
 

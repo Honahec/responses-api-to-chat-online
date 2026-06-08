@@ -29,6 +29,9 @@ POSTGRES_DB=responses_app
 POSTGRES_USER=app
 POSTGRES_PASSWORD=replace-me
 POSTGRES_PORT=5432
+POSTGRES_BOOTSTRAP_USER=app
+POSTGRES_BOOTSTRAP_PASSWORD=replace-me
+POSTGRES_BOOTSTRAP_DB=postgres
 APP_PORT=3000
 DATABASE_URL=postgres://app:replace-me@localhost:5432/responses_app
 APP_DATABASE_URL=postgres://app:replace-me@postgres:5432/responses_app
@@ -65,6 +68,13 @@ The compose stack includes:
 - `app`
 
 The `migrate` service runs SQL migrations before the app starts.
+
+If you already have a Docker volume initialized with old Postgres credentials,
+`POSTGRES_USER`, `POSTGRES_DB`, and `POSTGRES_PASSWORD` will not be applied by
+the Postgres image again. Set `POSTGRES_BOOTSTRAP_USER` and
+`POSTGRES_BOOTSTRAP_PASSWORD` to the old superuser credentials once; the
+`postgres-bootstrap` service will create or update the target app role/database
+before migrations run.
 
 ## Production With GHCR
 
