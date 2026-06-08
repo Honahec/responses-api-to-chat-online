@@ -27,6 +27,7 @@
 - [x] Configured Next.js standalone output for container builds.
 - [x] Added OIDC login, callback, logout, and current-user API foundation.
 - [x] Added server-side session storage using Postgres-backed session hashes.
+- [x] Added user-scoped conversation APIs for listing, creating, loading, updating, archiving, and saving state.
 
 ### Pending
 
@@ -36,7 +37,8 @@
 - [ ] Add repository functions.
 - [x] Implement OIDC login, callback, logout, and current-user APIs.
 - [ ] Replace in-memory/browser-only conversation state with server-persisted conversations.
-- [ ] Enforce per-user data isolation on every conversation and message API.
+- [x] Enforce per-user data isolation on every conversation API.
+- [ ] Enforce per-user data isolation on every message API.
 - [ ] Add quota enforcement before Responses API calls.
 - [ ] Add admin APIs and admin UI for users, quotas, usage, allowed models, and allowed tools.
 - [x] Add Dockerfile, `.dockerignore`, and Docker Compose files.
@@ -56,7 +58,7 @@
 
 - `web`: Next.js application.
 - `postgres`: Postgres database for sessions, users, conversations, messages, usage, and quotas.
-- `oidc_provider`: external OIDC provider, such as Keycloak, Authentik, Dex, Azure AD, Google Workspace, or another enterprise IdP.
+- `oidc_provider`: PocketID OIDC provider.
 
 ### Authentication Flow
 
@@ -523,8 +525,8 @@ Create `.github/workflows/docker-ghcr.yml`:
 
 ## Open Questions
 
-- Which OIDC provider will be used?
-- What exact group claim path should be used: `groups`, `realm_access.roles`, `cognito:groups`, or provider-specific?
+- PocketID will be used as the OIDC provider.
+- What exact PocketID group claim path should be used: `groups` or a PocketID-specific mapped claim?
 - Should admins be allowed to read full user conversations, or only usage/quota metadata?
 - Should vector store IDs be persisted per user and protected in the app database?
 - What are default daily/monthly request and token limits?
