@@ -36,6 +36,7 @@
 - [x] Added initial admin UI for users, quotas, and usage.
 - [x] Added GitHub Actions workflow for Docker builds and GHCR publishing.
 - [x] Documented Docker, PocketID OIDC, Postgres, and GHCR deployment.
+- [x] Persist message rows from conversation snapshots and expose a user-scoped message listing API.
 
 ### Pending
 
@@ -43,12 +44,12 @@
 - [ ] Confirm the exact PocketID group claim path.
 - [x] Add database migrations and a migration runner.
 - [x] Add Postgres connection helpers.
-- [ ] Add repository functions.
+- [x] Add repository functions.
 - [x] Implement OIDC login, callback, logout, and current-user APIs.
 - [x] Replace in-memory/browser-only conversation state with server-persisted conversations.
 - [x] Persist conversation snapshots after chat turns.
 - [x] Enforce per-user data isolation on every conversation API.
-- [ ] Enforce per-user data isolation on every message API.
+- [x] Enforce per-user data isolation on every message API.
 - [x] Add quota enforcement before Responses API calls.
 - [x] Add admin APIs for users, quotas, usage, allowed models, and allowed tools.
 - [x] Add admin UI for users, quotas, usage, allowed models, and allowed tools.
