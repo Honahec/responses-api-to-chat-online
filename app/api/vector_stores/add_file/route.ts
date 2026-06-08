@@ -1,5 +1,8 @@
 import { requireUser } from "@/lib/auth";
-import { linkUserVectorStoreFile } from "@/lib/file-resources";
+import {
+  getUserVectorStoreFileResources,
+  linkUserVectorStoreFile,
+} from "@/lib/file-resources";
 import { createOpenAIClientForUser } from "@/lib/openai";
 
 export async function POST(request: Request) {
@@ -7,7 +10,7 @@ export async function POST(request: Request) {
     const user = await requireUser();
     const openai = await createOpenAIClientForUser(user.id);
     const { vectorStoreId, fileId } = await request.json();
-    const resources = await linkUserVectorStoreFile({
+    const resources = await getUserVectorStoreFileResources({
       userId: user.id,
       vectorStoreId,
       fileId,
@@ -24,6 +27,10 @@ export async function POST(request: Request) {
         file_id: resources.file.provider_file_id,
       }
     );
+    await linkUserVectorStoreFile({
+      vectorStoreId: resources.vectorStore.id,
+      fileId: resources.file.id,
+    });
     return Response.json({
       id: resources.file.id,
       provider_file_id: resources.file.provider_file_id,

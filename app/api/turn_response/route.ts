@@ -19,6 +19,11 @@ export async function POST(request: Request) {
         status: 400,
       });
     }
+    if (!toolsState) {
+      return new Response(JSON.stringify({ error: "Missing toolsState" }), {
+        status: 400,
+      });
+    }
 
     const conversation = await getConversation(user.id, conversationId);
     if (!conversation) {

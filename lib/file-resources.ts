@@ -125,7 +125,7 @@ export async function listUserVectorStoreFiles(
   return result.rows;
 }
 
-export async function linkUserVectorStoreFile({
+export async function getUserVectorStoreFileResources({
   userId,
   vectorStoreId,
   fileId,
@@ -137,14 +137,22 @@ export async function linkUserVectorStoreFile({
   const vectorStore = await getUserVectorStore(userId, vectorStoreId);
   const file = await getUserFile(userId, fileId);
   if (!vectorStore || !file) return null;
+  return { vectorStore, file };
+}
 
+export async function linkUserVectorStoreFile({
+  vectorStoreId,
+  fileId,
+}: {
+  vectorStoreId: string;
+  fileId: string;
+}) {
   await query(
     `insert into user_vector_store_files (vector_store_id, file_id)
      values ($1, $2)
      on conflict do nothing`,
-    [vectorStore.id, file.id]
+    [vectorStoreId, fileId]
   );
-  return { vectorStore, file };
 }
 
 function collectContainerFiles(value: unknown, files: Map<string, any>) {

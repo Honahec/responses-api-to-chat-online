@@ -87,6 +87,7 @@ export async function getProviderCredentials(
       { status: 400 }
     );
   }
+  await assertProviderBaseURLAllowed(row.base_url);
 
   return {
     baseURL: row.base_url,

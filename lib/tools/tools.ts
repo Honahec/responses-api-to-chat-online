@@ -73,6 +73,12 @@ export const getTools = async (toolsState: ToolsState, userId: string) => {
     );
   }
 
+  if (mcpEnabled && !mcpConfig.profile_id) {
+    throw new Response(JSON.stringify({ error: "MCP profile is not saved" }), {
+      status: 400,
+    });
+  }
+
   if (mcpEnabled && mcpConfig.profile_id) {
     const profile = await getUserMcpProfile(userId, mcpConfig.profile_id);
     if (!profile) {

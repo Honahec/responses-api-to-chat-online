@@ -373,7 +373,8 @@ export const processMessages = async (
             // Handle tool call (execute function)
             const toolResult = await handleTool(
               toolCallMessage.name as string,
-              toolCallMessage.parsedArguments
+              toolCallMessage.parsedArguments,
+              targetConversationId
             );
 
             // Record tool output
