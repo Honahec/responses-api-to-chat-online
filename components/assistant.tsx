@@ -3,10 +3,38 @@ import React from "react";
 import Chat from "./chat";
 import useConversationStore from "@/stores/useConversationStore";
 import { Item, processMessages } from "@/lib/assistant";
+import useToolsStore from "@/stores/useToolsStore";
 
 export default function Assistant() {
-  const { chatMessages, addConversationItem, addChatMessage, setAssistantLoading } =
+  const {
+    activeConversationId,
+    chatMessages,
+    addConversationItem,
+    addChatMessage,
+    setActiveConversationId,
+    setAssistantLoading,
+  } =
     useConversationStore();
+  const toolsState = useToolsStore();
+
+  const ensureConversation = async () => {
+    if (activeConversationId) return activeConversationId;
+
+    const response = await fetch("/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: toolsState.selectedModel,
+        toolsState,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to create conversation");
+    }
+    const { conversation } = await response.json();
+    setActiveConversationId(conversation.id);
+    return conversation.id as string;
+  };
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -22,6 +50,7 @@ export default function Assistant() {
     };
 
     try {
+      await ensureConversation();
       setAssistantLoading(true);
       addConversationItem(userMessage);
       addChatMessage(userItem);
@@ -41,6 +70,7 @@ export default function Assistant() {
       approval_request_id: id,
     } as any;
     try {
+      await ensureConversation();
       addConversationItem(approvalItem);
       await processMessages();
     } catch (error) {

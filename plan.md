@@ -28,6 +28,7 @@
 - [x] Added OIDC login, callback, logout, and current-user API foundation.
 - [x] Added server-side session storage using Postgres-backed session hashes.
 - [x] Added user-scoped conversation APIs for listing, creating, loading, updating, archiving, and saving state.
+- [x] Bound Responses API turns to an authenticated user-owned conversation.
 
 ### Pending
 
@@ -37,6 +38,7 @@
 - [ ] Add repository functions.
 - [x] Implement OIDC login, callback, logout, and current-user APIs.
 - [ ] Replace in-memory/browser-only conversation state with server-persisted conversations.
+- [x] Persist conversation snapshots after chat turns.
 - [x] Enforce per-user data isolation on every conversation API.
 - [ ] Enforce per-user data isolation on every message API.
 - [ ] Add quota enforcement before Responses API calls.

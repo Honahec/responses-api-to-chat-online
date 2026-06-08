@@ -1,10 +1,25 @@
 import { getDeveloperPrompt, MODEL } from "@/config/constants";
+import { requireUser } from "@/lib/auth";
+import { getConversation } from "@/lib/conversations";
 import { createOpenAIClient } from "@/lib/openai";
 import { getTools } from "@/lib/tools/tools";
 
 export async function POST(request: Request) {
   try {
-    const { messages, toolsState } = await request.json();
+    const user = await requireUser();
+    const { conversationId, messages, toolsState } = await request.json();
+    if (!conversationId) {
+      return new Response(JSON.stringify({ error: "Missing conversationId" }), {
+        status: 400,
+      });
+    }
+
+    const conversation = await getConversation(user.id, conversationId);
+    if (!conversation) {
+      return new Response(JSON.stringify({ error: "Conversation not found" }), {
+        status: 404,
+      });
+    }
 
     const tools = await getTools(toolsState);
 

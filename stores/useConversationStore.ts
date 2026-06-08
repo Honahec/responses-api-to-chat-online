@@ -4,6 +4,8 @@ import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { INITIAL_MESSAGE } from "@/config/constants";
 
 interface ConversationState {
+  // Active server-side conversation id
+  activeConversationId: string | null;
   // Items displayed in the chat
   chatMessages: Item[];
   // Items sent to the Responses API
@@ -11,6 +13,7 @@ interface ConversationState {
   // Whether we are waiting for the assistant response
   isAssistantLoading: boolean;
 
+  setActiveConversationId: (id: string | null) => void;
   setChatMessages: (items: Item[]) => void;
   setConversationItems: (messages: any[]) => void;
   addChatMessage: (item: Item) => void;
@@ -21,6 +24,7 @@ interface ConversationState {
 }
 
 const useConversationStore = create<ConversationState>((set) => ({
+  activeConversationId: null,
   chatMessages: [
     {
       type: "message",
@@ -30,6 +34,7 @@ const useConversationStore = create<ConversationState>((set) => ({
   ],
   conversationItems: [],
   isAssistantLoading: false,
+  setActiveConversationId: (id) => set({ activeConversationId: id }),
   setChatMessages: (items) => set({ chatMessages: items }),
   setConversationItems: (messages) => set({ conversationItems: messages }),
   addChatMessage: (item) =>
@@ -50,6 +55,7 @@ const useConversationStore = create<ConversationState>((set) => ({
         },
       ],
       conversationItems: [],
+      activeConversationId: null,
     })),
 }));
 

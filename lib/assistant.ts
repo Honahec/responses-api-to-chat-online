@@ -73,6 +73,7 @@ export type Item =
 
 export const handleTurn = async (
   messages: any[],
+  conversationId: string,
   toolsState: ToolsState,
   onMessage: (data: any) => void
 ) => {
@@ -83,6 +84,7 @@ export const handleTurn = async (
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        conversationId,
         messages: messages,
         toolsState: toolsState,
         googleIntegrationEnabled,
@@ -135,8 +137,27 @@ export const handleTurn = async (
   }
 };
 
+const saveConversationSnapshot = async () => {
+  const { activeConversationId, chatMessages, conversationItems } =
+    useConversationStore.getState();
+  if (!activeConversationId) return;
+
+  const toolsState = useToolsStore.getState() as ToolsState;
+  await fetch(`/api/conversations/${activeConversationId}/state`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: toolsState.selectedModel,
+      toolsState,
+      chatMessages,
+      conversationItems,
+    }),
+  });
+};
+
 export const processMessages = async () => {
   const {
+    activeConversationId,
     chatMessages,
     conversationItems,
     setChatMessages,
@@ -147,6 +168,11 @@ export const processMessages = async () => {
   const toolsState = useToolsStore.getState() as ToolsState;
 
   const allConversationItems = conversationItems;
+  if (!activeConversationId) {
+    console.error("Cannot process messages without an active conversation");
+    setAssistantLoading(false);
+    return;
+  }
 
   let assistantMessageContent = "";
   let functionArguments = "";
@@ -155,6 +181,7 @@ export const processMessages = async () => {
 
   await handleTurn(
     allConversationItems,
+    activeConversationId,
     toolsState,
     async ({ event, data }) => {
       switch (event) {
@@ -549,4 +576,6 @@ export const processMessages = async () => {
       }
     }
   );
+
+  await saveConversationSnapshot();
 };
