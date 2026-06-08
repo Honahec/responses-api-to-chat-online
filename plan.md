@@ -25,6 +25,8 @@
 - [x] Added initial Postgres migration, migration runner, and database helper.
 - [x] Added Dockerfile and Docker Compose baseline for app, migration, and Postgres services.
 - [x] Configured Next.js standalone output for container builds.
+- [x] Added OIDC login, callback, logout, and current-user API foundation.
+- [x] Added server-side session storage using Postgres-backed session hashes.
 
 ### Pending
 
@@ -32,7 +34,7 @@
 - [x] Add database migrations and a migration runner.
 - [x] Add Postgres connection helpers.
 - [ ] Add repository functions.
-- [ ] Implement OIDC login, callback, logout, and current-user APIs.
+- [x] Implement OIDC login, callback, logout, and current-user APIs.
 - [ ] Replace in-memory/browser-only conversation state with server-persisted conversations.
 - [ ] Enforce per-user data isolation on every conversation and message API.
 - [ ] Add quota enforcement before Responses API calls.
