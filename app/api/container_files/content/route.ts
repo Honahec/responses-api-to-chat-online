@@ -1,3 +1,5 @@
+import { getOpenAIAPIBaseURL } from "@/lib/openai";
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const fileId = searchParams.get("file_id");
@@ -9,9 +11,10 @@ export async function GET(request: Request) {
     });
   }
   try {
+    const baseURL = getOpenAIAPIBaseURL();
     const url = containerId
-      ? `https://api.openai.com/v1/containers/${containerId}/files/${fileId}/content`
-      : `https://api.openai.com/v1/container-files/${fileId}/content`;
+      ? `${baseURL}/containers/${containerId}/files/${fileId}/content`
+      : `${baseURL}/container-files/${fileId}/content`;
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,

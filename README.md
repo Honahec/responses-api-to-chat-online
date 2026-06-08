@@ -38,6 +38,14 @@ This app is meant to be used as a starting point to build a conversational assis
    OPENAI_API_KEY=<your_api_key>
    ```
 
+   If you need to use an OpenAI-compatible endpoint instead of the default API
+   host, also set `OPENAI_BASE_URL`. Use the API root expected by the OpenAI
+   SDK, usually including `/v1`:
+
+   ```bash
+   OPENAI_BASE_URL=https://api.openai.com/v1
+   ```
+
 3. **Clone the Repository:**
 
    ```bash
@@ -49,13 +57,13 @@ This app is meant to be used as a starting point to build a conversational assis
    Run in the project root:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 5. **Run the app:**
 
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
    The app will be available at [`http://localhost:3000`](http://localhost:3000).
@@ -110,8 +118,8 @@ Learn more about the available 1P connectors in [our documentation](https://plat
    - `openid`
    - `email`
    - `profile`
-   - `https://www.googleapis.com/auth/calendar.events`
-   - `https://www.googleapis.com/auth/gmail.modify`
+   - `https://www.googleapis.com/auth/calendar.events.readonly`
+   - `https://www.googleapis.com/auth/gmail.readonly`
 
 4. Create `.env.local` (you can copy `.env.example`) at the project root and add:
 

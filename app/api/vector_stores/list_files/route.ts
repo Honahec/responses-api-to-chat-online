@@ -1,6 +1,6 @@
-import OpenAI from "openai";
+import { createOpenAIClient } from "@/lib/openai";
 
-const openai = new OpenAI();
+const openai = createOpenAIClient();
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

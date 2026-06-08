@@ -1,6 +1,6 @@
 import { getDeveloperPrompt, MODEL } from "@/config/constants";
+import { createOpenAIClient } from "@/lib/openai";
 import { getTools } from "@/lib/tools/tools";
-import OpenAI from "openai";
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
     console.log("Received messages:", messages);
 
-    const openai = new OpenAI();
+    const openai = createOpenAIClient();
 
     const events = await openai.responses.create({
       model: MODEL,

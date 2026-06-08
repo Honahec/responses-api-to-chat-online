@@ -1,5 +1,6 @@
-import OpenAI from "openai";
-const openai = new OpenAI();
+import { createOpenAIClient } from "@/lib/openai";
+
+const openai = createOpenAIClient();
 
 export async function POST(request: Request) {
   const { fileObject } = await request.json();
