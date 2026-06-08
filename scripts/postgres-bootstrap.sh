@@ -57,6 +57,30 @@ psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_BOOTSTRAP_USER" -d "$
 alter database ${TARGET_DB_IDENT} owner to ${TARGET_USER_IDENT};
 grant all privileges on database ${TARGET_DB_IDENT} to ${TARGET_USER_IDENT};
 grant all on schema public to ${TARGET_USER_IDENT};
+grant all privileges on all tables in schema public to ${TARGET_USER_IDENT};
+grant all privileges on all sequences in schema public to ${TARGET_USER_IDENT};
+grant all privileges on all functions in schema public to ${TARGET_USER_IDENT};
+alter default privileges in schema public grant all on tables to ${TARGET_USER_IDENT};
+alter default privileges in schema public grant all on sequences to ${TARGET_USER_IDENT};
+alter default privileges in schema public grant all on functions to ${TARGET_USER_IDENT};
+SQL
+
+echo "Ensuring ownership of existing public schema objects"
+psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_BOOTSTRAP_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 <<SQL
+select format('alter table if exists %I.%I owner to ${TARGET_USER_IDENT};', schemaname, tablename)
+from pg_tables
+where schemaname = 'public'
+\gexec
+
+select format('alter sequence if exists %I.%I owner to ${TARGET_USER_IDENT};', sequence_schema, sequence_name)
+from information_schema.sequences
+where sequence_schema = 'public'
+\gexec
+
+select format('alter function %s owner to ${TARGET_USER_IDENT};', oid::regprocedure)
+from pg_proc
+where pronamespace = 'public'::regnamespace
+\gexec
 SQL
 
 echo "Postgres bootstrap complete"
