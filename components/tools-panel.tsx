@@ -7,6 +7,7 @@ import McpConfig from "./mcp-config";
 import PanelConfig from "./panel-config";
 import useToolsStore from "@/stores/useToolsStore";
 import GoogleIntegrationPanel from "@/components/google-integration";
+import ModelSelector from "@/components/model-selector";
 
 export default function ContextPanel() {
   const {
@@ -34,6 +35,7 @@ export default function ContextPanel() {
   return (
     <div className="h-full p-8 w-full bg-[#f9f9f9] rounded-t-xl md:rounded-none border-l-1 border-stone-100">
       <div className="flex flex-col overflow-y-scroll h-full">
+        <ModelSelector />
         <PanelConfig
           title="File Search"
           tooltip="Allows to search a knowledge base (vector store)"

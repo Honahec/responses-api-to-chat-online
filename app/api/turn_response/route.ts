@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const openai = createOpenAIClient();
 
     const events = await openai.responses.create({
-      model: MODEL,
+      model: toolsState?.selectedModel || MODEL,
       input: messages,
       instructions: getDeveloperPrompt(),
       tools,

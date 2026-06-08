@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { defaultVectorStore } from "@/config/constants";
+import { defaultVectorStore, MODEL } from "@/config/constants";
 
 type File = {
   id: string;
@@ -31,6 +31,7 @@ export type McpConfig = {
 };
 
 export interface ToolsState {
+  selectedModel: string;
   webSearchEnabled: boolean;
   fileSearchEnabled: boolean;
   functionsEnabled: boolean;
@@ -43,6 +44,8 @@ export interface ToolsState {
 }
 
 interface StoreState {
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
   fileSearchEnabled: boolean;
   //previousFileSearchEnabled: boolean;
   setFileSearchEnabled: (enabled: boolean) => void;
@@ -68,6 +71,8 @@ interface StoreState {
 const useToolsStore = create<StoreState>()(
   persist(
     (set) => ({
+      selectedModel: MODEL,
+      setSelectedModel: (model) => set({ selectedModel: model }),
       vectorStore: defaultVectorStore.id !== "" ? defaultVectorStore : null,
       webSearchConfig: {
         user_location: {
