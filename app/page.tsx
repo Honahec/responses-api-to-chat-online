@@ -26,10 +26,10 @@ export default function Main() {
   return (
     <AuthGate>
       <div className="flex justify-center h-screen">
-        <div className="w-full md:w-[70%]">
+        <div className="min-w-0 flex-1">
           <Assistant />
         </div>
-        <div className=" hidden md:block w-[30%]">
+        <div className="hidden w-[360px] shrink-0 md:block">
           <ToolsPanel />
         </div>
         {/* Hamburger menu for small screens */}

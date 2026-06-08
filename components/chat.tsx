@@ -14,12 +14,14 @@ interface ChatProps {
   items: Item[];
   onSendMessage: (message: string) => void;
   onApprovalResponse: (approve: boolean, id: string) => void;
+  disabled?: boolean;
 }
 
 const Chat: React.FC<ChatProps> = ({
   items,
   onSendMessage,
   onApprovalResponse,
+  disabled = false,
 }) => {
   const itemsEndRef = useRef<HTMLDivElement>(null);
   const [inputMessageText, setinputMessageText] = useState<string>("");
@@ -35,13 +37,13 @@ const Chat: React.FC<ChatProps> = ({
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === "Enter" && !event.shiftKey && !isComposing) {
         event.preventDefault();
-        if (!isAssistantLoading) {
+        if (!isAssistantLoading && !disabled) {
           onSendMessage(inputMessageText);
         }
         setinputMessageText("");
       }
     },
-    [onSendMessage, inputMessageText, isComposing, isAssistantLoading]
+    [onSendMessage, inputMessageText, isComposing, isAssistantLoading, disabled]
   );
 
   useEffect(() => {
@@ -93,20 +95,21 @@ const Chat: React.FC<ChatProps> = ({
                       tabIndex={0}
                       dir="auto"
                       rows={2}
-                      placeholder="Message..."
+                      placeholder={disabled ? "Loading chat..." : "Message..."}
                       className="mb-2 resize-none border-0 focus:outline-none text-sm bg-transparent px-0 pb-6 pt-2"
                       value={inputMessageText}
                       onChange={(e) => setinputMessageText(e.target.value)}
                       onKeyDown={handleKeyDown}
                       onCompositionStart={() => setIsComposing(true)}
                       onCompositionEnd={() => setIsComposing(false)}
+                      disabled={disabled}
                     />
                   </div>
                   <button
-                    disabled={!inputMessageText || isAssistantLoading}
+                    disabled={!inputMessageText || isAssistantLoading || disabled}
                     data-testid="send-button"
                     className="flex size-8 items-end justify-center rounded-full bg-black text-white transition-colors hover:opacity-70 focus-visible:outline-none focus-visible:outline-black disabled:bg-[#D7D7D7] disabled:text-[#f4f4f4] disabled:hover:opacity-100"
-                  onClick={() => {
+                    onClick={() => {
                       onSendMessage(inputMessageText);
                       setinputMessageText("");
                     }}

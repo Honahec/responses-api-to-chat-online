@@ -137,13 +137,16 @@ export const handleTurn = async (
   }
 };
 
-const saveConversationSnapshot = async (conversationItemsOverride?: any[]) => {
+const saveConversationSnapshot = async (
+  conversationId: string,
+  conversationItemsOverride?: any[]
+) => {
   const { activeConversationId, chatMessages, conversationItems } =
     useConversationStore.getState();
-  if (!activeConversationId) return;
+  if (!activeConversationId || activeConversationId !== conversationId) return;
 
   const toolsState = useToolsStore.getState() as ToolsState;
-  await fetch(`/api/conversations/${activeConversationId}/state`, {
+  await fetch(`/api/conversations/${conversationId}/state`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -155,9 +158,13 @@ const saveConversationSnapshot = async (conversationItemsOverride?: any[]) => {
   });
 };
 
-export const processMessages = async (inputItems?: any[]) => {
+export const processMessages = async (
+  inputItems?: any[],
+  conversationIdOverride?: string
+) => {
   const {
     activeConversationId,
+    activeStreamConversationId,
     chatMessages,
     conversationItems,
     setChatMessages,
@@ -168,8 +175,17 @@ export const processMessages = async (inputItems?: any[]) => {
   const toolsState = useToolsStore.getState() as ToolsState;
 
   const allConversationItems = inputItems ?? conversationItems;
-  if (!activeConversationId) {
+  const targetConversationId = conversationIdOverride ?? activeConversationId;
+  if (!targetConversationId) {
     console.error("Cannot process messages without an active conversation");
+    setAssistantLoading(false);
+    return;
+  }
+  if (
+    activeStreamConversationId &&
+    activeStreamConversationId !== targetConversationId
+  ) {
+    console.error("Cannot process messages while another conversation is streaming");
     setAssistantLoading(false);
     return;
   }
@@ -181,9 +197,13 @@ export const processMessages = async (inputItems?: any[]) => {
 
   await handleTurn(
     allConversationItems,
-    activeConversationId,
+    targetConversationId,
     toolsState,
     async ({ event, data }) => {
+      const currentState = useConversationStore.getState();
+      if (currentState.activeConversationId !== targetConversationId) {
+        return;
+      }
       switch (event) {
         case "response.output_text.delta":
         case "response.output_text.annotation.added": {
@@ -369,7 +389,7 @@ export const processMessages = async (inputItems?: any[]) => {
             setConversationItems([...conversationItems]);
 
             // Create another turn after tool output has been added
-            await processMessages();
+            await processMessages(undefined, targetConversationId);
           }
           if (
             toolCallMessage &&
@@ -577,5 +597,5 @@ export const processMessages = async (inputItems?: any[]) => {
     }
   );
 
-  await saveConversationSnapshot(allConversationItems);
+  await saveConversationSnapshot(targetConversationId, allConversationItems);
 };
