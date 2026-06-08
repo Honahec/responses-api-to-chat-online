@@ -102,6 +102,9 @@ importers:
       '@types/node':
         specifier: ^20.16.10
         version: 20.19.42
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
       '@types/react':
         specifier: ^18.3.10
         version: 18.3.31
@@ -906,6 +909,9 @@ packages:
 
   '@types/node@20.19.42':
     resolution: {integrity: sha512-5L7SUaFC1RyDraj2yRhyBzHTobyXHmohD100CChNtyPyleoq37Mqab5Gn8XEKI04dfN/oqPdpHk38MgcQWHbZg==}
+
+  '@types/pg@8.20.0':
+    resolution: {integrity: sha512-bEPFOaMAHTEP1EzpvHTbmwR8UsFyHSKsRisLIHVMXnpNefSbGA1bD6CVy+qKjGSqmZqNqBDV2azOBo8TgkcVow==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -3785,6 +3791,12 @@ snapshots:
   '@types/node@20.19.42':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/pg@8.20.0':
+    dependencies:
+      '@types/node': 20.19.42
+      pg-protocol: 1.14.0
+      pg-types: 2.2.0
 
   '@types/prop-types@15.7.15': {}
 
