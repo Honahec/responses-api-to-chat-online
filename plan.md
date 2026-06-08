@@ -1,538 +1,559 @@
-# OIDC, Postgres, Docker, and GHCR Implementation Plan
+# Multi-User Isolation and User-Configured Provider Plan
+
+## Strategy Change
+
+The app should move from a deployment-level OpenAI configuration to a user-scoped configuration model.
+
+Each authenticated user must configure their own upstream provider settings, including:
+
+- `base_url`
+- `api_key`
+- model preferences and allowlist-effective model selection
+- MCP servers and credentials
+- custom function definitions and execution endpoints
+- connector credentials
+- file/vector-store resources
+- code interpreter container/file access policy
+
+The server must treat every conversation, tool configuration, external credential, uploaded file, vector store, generated container file, and connector token as owned by one user. Browser state may cache UI preferences, but durable configuration and sensitive data must live server-side with user ownership and encryption where appropriate.
+
+## Current Code Audit Notes
+
+These notes reflect the current repository state before implementing this plan.
+
+### Already User-Scoped
+
+- OIDC/PocketID login exists.
+- Sessions are backed by Postgres session token hashes for the main app auth.
+- `users`, `sessions`, `conversations`, `messages`, `usage_events`, and `user_quotas` exist.
+- Conversation APIs call `requireUser()` and scope reads/writes by `user.id`.
+- `/api/turn_response` requires an authenticated user and validates `conversationId` ownership.
+- Admin APIs exist for users and quotas.
+
+### Still Global or Insufficiently Isolated
+
+- `lib/openai.ts` creates OpenAI clients from global `OPENAI_API_KEY` and `OPENAI_BASE_URL`.
+- Vector store routes use the global OpenAI client and do not require user auth or persist ownership metadata.
+- Container file download uses `process.env.OPENAI_API_KEY` directly and accepts arbitrary `file_id` / `container_id` query params without a local ownership check.
+- Tool settings are persisted in browser `localStorage` through `stores/useToolsStore.ts`; MCP server URLs and tool settings are not durable, auditable, or user-scoped on the server.
+- Conversations store `tools_state`, but this can contain raw client-provided IDs/config and should not be trusted as an authorization source.
+- Custom functions are hardcoded in `config/tools-list.ts` and `config/functions.ts`; they are deployment-owned instead of user-configured.
+- Function execution currently happens client-side after streaming tool calls through `lib/assistant.ts`, then calls local app routes. This makes per-user server policy and secret handling awkward.
+- MCP configuration is supplied by the browser and passed into Responses API tool definitions. There is no server-side user-owned MCP profile table, encrypted secrets, or approval policy persistence.
+- Code interpreter is enabled with `{ type: "code_interpreter", container: { type: "auto" } }`; generated `container_id` / `file_id` references are not registered locally before download.
+- Google connector tokens are partly stored in cookies and in an in-memory map in `lib/session.ts`; they are not durable encrypted user-owned connector credentials.
 
 ## Goals
 
-- Add unified OIDC authentication.
-- Authorize users by OIDC group claims:
-  - `superadmin`: administrator access.
-  - `chat_user`: normal service access.
-- Persist chat data in Postgres with strict user isolation.
-- Add an admin console for managing users, quotas, usage, and service limits.
-- Package the app with Docker and Docker Compose.
-- Publish container images to GitHub Container Registry (GHCR).
+- Let each user configure their own provider `base_url` and encrypted `api_key`.
+- Add a first-class conversation sidebar for multiple conversations.
+- Guarantee context isolation between conversations for the same user.
+- Guarantee tenant isolation between users across conversations, files, tools, provider keys, MCP, functions, connectors, and code interpreter artifacts.
+- Store all sensitive credentials encrypted at rest.
+- Move durable tool configuration from browser-local state to user-owned server records.
+- Keep admins able to manage availability, quotas, and policy without exposing users' secrets.
+- Preserve the existing OIDC and Postgres foundation.
+
+## Non-Goals
+
+- Do not write implementation code as part of this planning change.
+- Do not build a custom identity provider.
+- Do not let users access other users' provider keys, conversations, files, vector stores, container files, MCP configs, connector tokens, or function configs.
+- Do not rely on client-provided IDs or browser-local state as proof of ownership.
+- Do not expose decrypted `api_key`, MCP secrets, connector tokens, or function secrets back to the browser.
 
 ## Tracking
 
 ### Completed
 
-- [x] Drafted the OIDC, Postgres, Docker, and GHCR implementation plan.
-- [x] Defined the required OIDC group mapping:
-  - `superadmin` -> administrator access.
-  - `chat_user` -> normal service access.
-- [x] Defined the first-pass Postgres data model for users, sessions, conversations, messages, usage events, quotas, and system settings.
-- [x] Defined the Docker packaging and GHCR publishing direction.
-- [x] Added the `pg` runtime dependency to prepare for server-side Postgres access.
-- [x] Added initial Postgres migration, migration runner, and database helper.
-- [x] Added Dockerfile and Docker Compose baseline for app, migration, and Postgres services.
-- [x] Configured Next.js standalone output for container builds.
-- [x] Added OIDC login, callback, logout, and current-user API foundation.
-- [x] Added server-side session storage using Postgres-backed session hashes.
-- [x] Added user-scoped conversation APIs for listing, creating, loading, updating, archiving, and saving state.
-- [x] Bound Responses API turns to an authenticated user-owned conversation.
-- [x] Added PocketID login gate in the frontend.
-- [x] Restore the latest server-persisted conversation after page refresh.
-- [x] Confirmed the OIDC provider: PocketID.
-- [x] Confirmed the PocketID group claim path: `groups`.
-- [x] Replaced in-memory/browser-only conversation state with server-persisted conversations.
-- [x] Persisted conversation snapshots after chat turns.
-- [x] Enforced per-user data isolation on every conversation API.
-- [x] Enforced per-user data isolation on every message API.
-- [x] Added admin user and per-user quota APIs.
-- [x] Enforced request-count, model allowlist, and tool allowlist quotas before Responses API calls.
-- [x] Added initial admin UI for users, quotas, and usage.
-- [x] Added admin APIs for users, quotas, usage, allowed models, and allowed tools.
-- [x] Added GitHub Actions workflow for Docker builds and GHCR publishing.
-- [x] Documented Docker, PocketID OIDC, Postgres, and GHCR deployment.
-- [x] Persist message rows from conversation snapshots and expose a user-scoped message listing API.
+- [x] Audited the current auth, conversation, OpenAI client, file/vector-store, MCP, functions, connector token, and code interpreter paths.
+- [x] Rewrote this plan around per-user provider configuration and broader isolation boundaries.
 
 ### Pending
 
-- None.
-
-## Non-Goals
-
-- Do not build a custom identity provider.
-- Do not store OIDC passwords or credentials locally.
-- Do not let normal users see, query, or administer other users' conversations.
-- Do not rely on browser-only localStorage for durable chat history.
+- [ ] Add encrypted user provider settings for `base_url` and `api_key`.
+- [ ] Refactor OpenAI client creation to require `userId` and load that user's decrypted provider settings server-side.
+- [ ] Add multi-conversation sidebar and explicit conversation switching.
+- [ ] Enforce conversation context isolation in frontend state and server APIs.
+- [ ] Add user-owned vector store and uploaded file metadata tables.
+- [ ] Lock file-search routes behind auth and ownership checks.
+- [ ] Register code interpreter container files before allowing download.
+- [ ] Add user-owned MCP profiles with encrypted secrets and persisted approval policy.
+- [ ] Move custom function definitions to user-owned configuration.
+- [ ] Execute custom functions server-side under user/conversation policy.
+- [ ] Move connector OAuth tokens into encrypted user-owned storage.
+- [ ] Update quota and admin policy to work with user-owned provider settings and tools.
+- [ ] Add tests for cross-user and cross-conversation isolation.
 
 ## Architecture
 
 ### Runtime Components
 
-- `web`: Next.js application.
-- `postgres`: Postgres database for sessions, users, conversations, messages, usage, and quotas.
+- `web`: Next.js app and API routes.
+- `postgres`: durable storage for users, sessions, conversations, messages, quotas, usage, provider settings, tool configs, file metadata, connector credentials, and audit logs.
 - `oidc_provider`: PocketID OIDC provider.
+- `upstream_ai_provider`: user-selected OpenAI-compatible provider via per-user `base_url` and `api_key`.
+- `mcp_servers`: user-configured remote MCP servers.
+- `external_function_endpoints`: user-configured function execution targets, where allowed.
+- `connectors`: user-authorized OAuth integrations such as Google.
 
-### Authentication Flow
+### Provider Settings
 
-1. User opens the app.
-2. Middleware checks whether the user has an authenticated server session.
-3. If not authenticated, redirect to OIDC login.
-4. OIDC callback validates:
-   - issuer
-   - client id
-   - state
-   - nonce
-   - PKCE verifier
-   - token signature
-5. Server extracts identity claims:
-   - `sub`
-   - `email`
-   - `name`
-   - `groups`
-6. Server upserts local user record by `(issuer, subject)`.
-7. Server grants role:
-   - `superadmin` group -> `admin`
-   - `chat_user` group -> `user`
-   - neither group -> deny access
-8. Server creates an HTTP-only session cookie.
+Add a user-owned provider configuration layer:
 
-### Authorization Model
+- Each user has one default provider profile at minimum.
+- A future version may allow multiple named provider profiles per user.
+- `base_url` is stored server-side and validated before use.
+- `api_key` is encrypted at rest and only decrypted inside server-side request handling.
+- The browser can see metadata such as provider profile name, masked key fingerprint, and configured base URL, but never the raw key.
+- `/api/turn_response`, vector-store routes, file upload routes, container file download, model listing, and any OpenAI-compatible API call must create the client from the current user's provider profile.
 
-- Every protected route must resolve the current authenticated user on the server.
-- All user-owned data must include `user_id`.
-- Normal users can only access rows where `user_id = current_user.id`.
-- Admin users can access admin routes and inspect/manage users and quotas.
-- Admin routes must check role on the server, not only in the UI.
+Recommended first-pass table:
 
-## Environment Variables
+- `user_provider_settings`
+  - `user_id uuid primary key references users(id) on delete cascade`
+  - `base_url text not null`
+  - `api_key_encrypted text not null`
+  - `api_key_fingerprint text not null`
+  - `default_model text`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
 
-```env
-DATABASE_URL=postgres://app:app_password@postgres:5432/responses_app
+Encryption requirements:
 
-OIDC_ISSUER_URL=https://idp.example.com/realms/main
-OIDC_CLIENT_ID=responses-chat
-OIDC_CLIENT_SECRET=...
-OIDC_REDIRECT_URI=http://localhost:3000/api/auth/callback
-OIDC_GROUPS_CLAIM=groups
-OIDC_ADMIN_GROUP=superadmin
-OIDC_USER_GROUP=chat_user
+- Add `CREDENTIAL_ENCRYPTION_KEY` for envelope or application-level encryption.
+- Use authenticated encryption.
+- Never log raw credentials.
+- Return only masked/fingerprinted credential metadata.
+- Support key rotation through versioned encrypted payloads if practical.
 
-SESSION_SECRET=change-me-minimum-32-bytes
+### Conversation Model and Sidebar
 
-OPENAI_API_KEY=...
-OPENAI_BASE_URL=https://api.openai.com/v1
-```
+The sidebar is now a near-term feature, not a later nice-to-have.
 
-## Database Schema
+Required sidebar behavior:
 
-### `users`
+- List current user's active conversations.
+- Create new conversation.
+- Switch active conversation.
+- Rename conversation.
+- Archive/delete conversation.
+- Restore the last selected conversation per user when possible.
+- Keep loading and streaming state tied to the active conversation.
 
-- `id uuid primary key`
-- `issuer text not null`
-- `subject text not null`
-- `email text`
-- `name text`
-- `role text not null check (role in ('admin', 'user'))`
-- `groups jsonb not null default '[]'`
-- `enabled boolean not null default true`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
-- unique index on `(issuer, subject)`
+Context isolation requirements:
 
-### `sessions`
+- Each conversation has its own `conversation_items`, `chat_messages`, model, and resolved tool state snapshot.
+- Switching conversations must replace all local message/context state.
+- A message send must include exactly one server-owned `conversationId`.
+- `/api/turn_response` must load the conversation by `(user_id, conversation_id)` and use only that conversation's saved context plus the new user input.
+- The server should reject attempts to append items from one conversation into another.
+- Streaming updates should be ignored client-side if they arrive for a conversation that is no longer active.
 
-- `id uuid primary key`
-- `user_id uuid not null references users(id) on delete cascade`
-- `session_hash text not null unique`
-- `expires_at timestamptz not null`
-- `created_at timestamptz not null default now()`
-- `last_seen_at timestamptz`
+Implementation direction:
 
-Store only a hash of the session token in Postgres. Store the raw session token only in an HTTP-only secure cookie.
+- Keep `conversations.user_id` as the primary isolation boundary.
+- Treat `conversations.tools_state` as a snapshot for display/resume only, not as authority for file/tool ownership.
+- Add API support for sidebar list refresh after create/rename/archive.
+- Consider adding `last_active_conversation_id` per user or user preference.
 
-### `conversations`
+### Files, Vector Stores, and File Search
 
-- `id uuid primary key`
-- `user_id uuid not null references users(id) on delete cascade`
-- `title text not null default 'New chat'`
-- `model text not null`
-- `tools_state jsonb not null default '{}'`
-- `archived boolean not null default false`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+Current file/vector-store routes must be hardened before multi-user use.
 
-Index:
+Required changes:
 
-- `(user_id, updated_at desc)`
+- Require `requireUser()` in all vector store and file routes.
+- Create OpenAI clients from the current user's provider settings.
+- Persist local ownership metadata for every uploaded upstream file and vector store.
+- Check ownership before retrieving, listing, attaching, or using a vector store.
+- Check ownership before using a `vector_store_id` in a Responses API file-search tool.
+- Avoid trusting vector store IDs from browser localStorage or conversation snapshots.
 
-### `messages`
+Recommended tables:
 
-- `id uuid primary key`
-- `conversation_id uuid not null references conversations(id) on delete cascade`
-- `user_id uuid not null references users(id) on delete cascade`
-- `role text not null`
-- `item jsonb not null`
-- `api_item jsonb`
-- `created_at timestamptz not null default now()`
+- `user_files`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `provider_file_id text not null`
+  - `filename text`
+  - `purpose text`
+  - `mime_type text`
+  - `size_bytes bigint`
+  - `provider_profile_id uuid`
+  - `created_at timestamptz not null default now()`
 
-Index:
+- `user_vector_stores`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `provider_vector_store_id text not null`
+  - `name text not null`
+  - `provider_profile_id uuid`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
 
-- `(conversation_id, created_at asc)`
-- `(user_id, created_at desc)`
+- `user_vector_store_files`
+  - `vector_store_id uuid not null references user_vector_stores(id) on delete cascade`
+  - `file_id uuid not null references user_files(id) on delete cascade`
+  - `created_at timestamptz not null default now()`
 
-The duplicated `user_id` is intentional. It makes user-scoped queries and defensive authorization checks simpler.
+### Code Interpreter and Container Files
 
-### `usage_events`
+Code interpreter currently creates automatic containers and can return container file citations. Those artifacts must be associated with the user and conversation before download.
 
-- `id uuid primary key`
-- `user_id uuid not null references users(id) on delete cascade`
-- `conversation_id uuid references conversations(id) on delete set null`
-- `model text`
-- `input_tokens integer not null default 0`
-- `output_tokens integer not null default 0`
-- `total_tokens integer not null default 0`
-- `request_count integer not null default 1`
-- `created_at timestamptz not null default now()`
+Required changes:
 
-### `user_quotas`
+- Keep code interpreter enablement as a user/conversation tool setting subject to admin policy.
+- During streaming completion, capture `container_id`, `file_id`, filename, and conversation ownership for generated files.
+- Store generated container file metadata locally.
+- Require auth and ownership checks in `/api/container_files/content`.
+- Download container files using the current user's provider profile, not global env credentials.
+- Restrict downloads to files generated by the same user, and preferably the same conversation.
 
-- `user_id uuid primary key references users(id) on delete cascade`
-- `daily_request_limit integer`
-- `monthly_request_limit integer`
-- `daily_token_limit integer`
-- `monthly_token_limit integer`
-- `allowed_models jsonb`
-- `enabled_tools jsonb`
-- `updated_at timestamptz not null default now()`
+Recommended table:
 
-Null limit means "use system default".
+- `user_container_files`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `conversation_id uuid references conversations(id) on delete cascade`
+  - `provider_container_id text`
+  - `provider_file_id text not null`
+  - `filename text`
+  - `mime_type text`
+  - `provider_profile_id uuid`
+  - `created_at timestamptz not null default now()`
 
-### `system_settings`
+### MCP
 
-- `key text primary key`
-- `value jsonb not null`
-- `updated_at timestamptz not null default now()`
+MCP configuration must be user-owned. Browser-provided MCP config can be used for draft editing, but not as the final source of truth for execution.
 
-Suggested keys:
+Required changes:
 
-- `default_quotas`
-- `allowed_models`
-- `allowed_tools`
-- `maintenance_mode`
+- Add user MCP profile CRUD APIs.
+- Store server URL, label, allowed tools, approval policy, and credentials server-side.
+- Encrypt bearer tokens, headers, OAuth credentials, or any MCP secret material.
+- Let users select which MCP profile is enabled for a conversation.
+- Server resolves selected MCP profile by `(user_id, profile_id)` before calling Responses API.
+- Persist approval responses by user/conversation/tool call where needed.
+- Admin policy can disable MCP globally or restrict allowed server domains, but should not expose user secrets.
 
-## User Isolation Rules
+Recommended tables:
 
-- A normal user can list only their own conversations.
-- A normal user can load only messages where `conversation.user_id = current_user.id`.
-- A normal user can send a new turn only for their own conversation.
-- A normal user can attach only their own vector stores if vector store metadata is later persisted locally.
-- Admin can inspect and manage user records, quotas, and usage, but admin actions must be auditable.
+- `user_mcp_profiles`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `server_label text not null`
+  - `server_url text not null`
+  - `allowed_tools jsonb not null default '[]'::jsonb`
+  - `approval_policy text not null`
+  - `secrets_encrypted text`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
+
+- `mcp_approval_events`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `conversation_id uuid references conversations(id) on delete cascade`
+  - `mcp_profile_id uuid references user_mcp_profiles(id) on delete set null`
+  - `tool_name text`
+  - `arguments jsonb`
+  - `approved boolean not null`
+  - `created_at timestamptz not null default now()`
+
+### Custom Functions
+
+Custom functions should be configured by the user, not hardcoded deployment-wide.
+
+Required changes:
+
+- Replace hardcoded `toolsList`/`functionsMap` as the only available function source.
+- Add user-owned function definitions with JSON schema, description, execution type, and encrypted secrets.
+- Execute function calls server-side after validating ownership, enabled state, schema, quotas, and admin policy.
+- Do not let browser code execute privileged functions or hold function secrets.
+- Persist function call outputs into the correct conversation only.
+
+Recommended function execution modes:
+
+- `http`: server calls a user-configured HTTPS endpoint with validated arguments.
+- `builtin`: deployment-provided safe built-ins that users may enable per policy.
+
+Recommended table:
+
+- `user_functions`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `name text not null`
+  - `description text not null`
+  - `parameters_schema jsonb not null`
+  - `execution_type text not null`
+  - `endpoint_url text`
+  - `secrets_encrypted text`
+  - `enabled boolean not null default true`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
+
+### Connectors and OAuth Tokens
+
+Connector credentials must follow the same user-scoped encrypted storage rule.
+
+Required changes:
+
+- Move Google OAuth token storage out of cookie/in-memory-only storage.
+- Store connector token sets encrypted and keyed by `user_id`.
+- Refresh tokens server-side.
+- Never expose raw access or refresh tokens to the browser.
+- Let users revoke connector access.
+- Use connector tools only when the current user has an active connector credential.
+
+Recommended table:
+
+- `user_connector_credentials`
+  - `id uuid primary key`
+  - `user_id uuid not null references users(id) on delete cascade`
+  - `connector text not null`
+  - `token_set_encrypted text not null`
+  - `scope text`
+  - `expires_at timestamptz`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
+
+## Authorization Rules
+
+- Every protected route resolves the current authenticated user server-side.
+- Every user-owned row includes `user_id`.
+- Every external resource ID accepted from the browser is mapped to a local row owned by `current_user.id`.
+- Conversations are scoped by `(user_id, conversation_id)`.
+- Files and vector stores are scoped by `(user_id, local_resource_id)` and then mapped to upstream provider IDs server-side.
+- Container file downloads require a local row owned by the current user.
+- MCP profiles are scoped by `(user_id, mcp_profile_id)`.
+- Function definitions are scoped by `(user_id, function_id/name)`.
+- Connector credentials are scoped by `(user_id, connector)`.
+- Admin routes may inspect metadata and policy, but must not reveal decrypted user secrets.
 
 Optional hardening:
 
 - Enable Postgres Row Level Security for user-owned tables.
-- Use app-level `current_user_id` checks even if RLS is enabled.
-- Add audit log rows for admin reads and writes.
+- Add audit logs for admin reads/writes and credential changes.
+- Add CSRF protection for state-changing cookie-auth routes.
+- Add rate limits for login, chat, file upload, credential update, and connector auth endpoints.
 
-## API Routes
+## API Direction
 
-### Authentication
+### Provider Settings
 
-- `GET /api/auth/login`
-  - Creates state, nonce, PKCE verifier.
-  - Redirects to OIDC authorization endpoint.
+- `GET /api/user/provider-settings`
+  - Returns base URL, default model, and masked key metadata.
 
-- `GET /api/auth/callback`
-  - Validates callback.
-  - Upserts user.
-  - Checks OIDC group authorization.
-  - Creates server session.
-  - Redirects to `/`.
+- `PUT /api/user/provider-settings`
+  - Validates and stores base URL.
+  - Encrypts and stores API key.
+  - Updates key fingerprint.
 
-- `POST /api/auth/logout`
-  - Deletes server session.
-  - Clears auth cookie.
-
-- `GET /api/auth/me`
-  - Returns current user profile and role.
+- `POST /api/user/provider-settings/test`
+  - Uses the current user's provider settings server-side to verify connectivity.
 
 ### Conversations
 
 - `GET /api/conversations`
-  - Lists current user's conversations.
+  - Sidebar list for current user.
 
 - `POST /api/conversations`
-  - Creates a new conversation.
+  - Creates a new isolated conversation.
 
 - `GET /api/conversations/:id`
-  - Loads one conversation and its messages.
+  - Loads one user-owned conversation and its state.
 
 - `PATCH /api/conversations/:id`
-  - Renames or archives a conversation.
+  - Rename/archive/update metadata for one user-owned conversation.
 
 - `DELETE /api/conversations/:id`
-  - Deletes or archives a conversation.
+  - Archive or delete one user-owned conversation.
 
-### Chat Turn
+- `PUT /api/conversations/:id/state`
+  - Save state only after server validates the conversation belongs to the user.
 
-- Extend `POST /api/turn_response`:
+### Chat Turns
+
+- `POST /api/turn_response`
   - Requires authenticated user.
-  - Requires `conversationId`.
-  - Validates ownership.
-  - Validates quotas before calling Responses API.
-  - Persists user input message.
-  - Streams assistant response.
-  - Persists final assistant/tool items after completion.
-  - Records usage if available.
+  - Requires user-owned `conversationId`.
+  - Loads current user's provider settings.
+  - Loads conversation-owned context.
+  - Resolves enabled tools from server-owned user configuration.
+  - Validates quotas and admin policy.
+  - Streams response.
+  - Persists final assistant/tool items to the same conversation.
+  - Registers generated files/container artifacts.
+  - Records usage.
 
-### Admin
+### Files and Vector Stores
 
-- `GET /api/admin/users`
-- `GET /api/admin/users/:id`
-- `PATCH /api/admin/users/:id`
-- `GET /api/admin/users/:id/usage`
-- `GET /api/admin/users/:id/quotas`
-- `PUT /api/admin/users/:id/quotas`
-- `GET /api/admin/settings`
-- `PUT /api/admin/settings`
+- `GET /api/user/files`
+- `POST /api/user/files`
+- `GET /api/user/vector-stores`
+- `POST /api/user/vector-stores`
+- `POST /api/user/vector-stores/:id/files`
+- `GET /api/user/vector-stores/:id/files`
+- `GET /api/container_files/content`
 
-All admin routes require role `admin`.
+All routes require auth and local ownership checks.
+
+### MCP
+
+- `GET /api/user/mcp-profiles`
+- `POST /api/user/mcp-profiles`
+- `PATCH /api/user/mcp-profiles/:id`
+- `DELETE /api/user/mcp-profiles/:id`
+- `POST /api/user/mcp-profiles/:id/test`
+
+### Custom Functions
+
+- `GET /api/user/functions`
+- `POST /api/user/functions`
+- `PATCH /api/user/functions/:id`
+- `DELETE /api/user/functions/:id`
+- `POST /api/user/functions/:id/test`
+
+### Connectors
+
+- `GET /api/user/connectors`
+- `POST /api/user/connectors/:connector/auth`
+- `GET /api/user/connectors/:connector/callback`
+- `DELETE /api/user/connectors/:connector`
 
 ## Frontend Changes
 
-### Auth UI
+### Settings
 
-- Show login screen when unauthenticated.
-- Show current user and logout button after login.
-- Hide app content while `/api/auth/me` is loading.
-- Show "access denied" if user lacks both required groups.
+- Add user provider settings UI:
+  - base URL input
+  - API key input/update
+  - masked key status
+  - connection test
+  - default model
 
-### Chat UI
+- Move durable tool config out of local-only storage:
+  - file search resource picker
+  - MCP profiles
+  - function definitions
+  - connector status
+  - code interpreter toggle and policy status
 
-- Add conversation sidebar:
-  - New chat
-  - Conversation list
-  - Rename
-  - Archive/delete
-- Load selected conversation from server.
-- Persist every turn to the server.
-- Refreshing the page restores the selected conversation.
+### Sidebar
 
-### Admin UI
+- Add a persistent conversation sidebar to the main app.
+- Show loading/error/empty states for conversation list.
+- Support create, select, rename, archive/delete.
+- Keep active conversation visible and stable during streaming.
 
-- Add `/admin` page visible only to `superadmin`.
-- User table:
-  - email/name
-  - role
-  - groups
-  - enabled/disabled
-  - usage summary
-- User detail:
-  - current quota
-  - request/token usage
-  - allowed models
-  - enabled tools
-- Settings page:
-  - default quotas
-  - global model allowlist
-  - global tool allowlist
+### Chat
 
-## Quota Enforcement
+- On conversation switch, hydrate message state from the selected conversation.
+- Disable send while the selected conversation is loading.
+- Associate streaming events with the initiating conversation.
+- Prevent stale streams from mutating a newly selected conversation.
+
+## Quotas and Admin Policy
+
+Quota checks remain server-side, but must account for user-owned provider settings and tools.
 
 Before every Responses API call:
 
-1. Load user.
+1. Load current user.
 2. Verify user is enabled.
-3. Load effective quotas:
-   - user-specific quota if set
-   - otherwise system default
-4. Check request count usage for current day/month.
-5. Check token usage if token accounting is available.
-6. Check selected model against allowed models.
-7. Check enabled tools against allowed tools.
-8. Reject with `403` or `429` before calling upstream if over limit.
+3. Load current user's provider settings.
+4. Load effective quotas and admin policy.
+5. Validate selected model.
+6. Resolve server-owned tool configuration.
+7. Validate requested files/vector stores/MCP/functions/connectors are owned by the user.
+8. Check request and token limits.
+9. Reject before upstream calls if over limit or unauthorized.
 
-After every completed response:
+Admin policy should support:
 
-1. Record usage event.
-2. Persist response metadata.
-3. Update conversation timestamp.
+- allowed provider base URL domains or patterns
+- allowed models
+- allowed tools
+- MCP enabled/disabled
+- custom functions enabled/disabled
+- code interpreter enabled/disabled
+- file upload size/count limits
+- connector availability
 
-## Docker Packaging
-
-### Files
-
-- `Dockerfile`
-- `.dockerignore`
-- `docker-compose.yml`
-- `docker-compose.prod.yml` or documented production compose overrides
-
-### Image Strategy
-
-- Multi-stage Dockerfile:
-  - `deps`: install pnpm dependencies.
-  - `builder`: run `pnpm build`.
-  - `runner`: minimal runtime with `.next/standalone`.
-- Set `next.config.mjs`:
-
-```js
-const nextConfig = {
-  output: "standalone",
-  devIndicators: false,
-};
-```
-
-### Local Compose Services
-
-- `app`
-  - builds local Dockerfile
-  - exposes `3000`
-  - depends on `postgres`
-  - receives env from `.env`
-
-- `postgres`
-  - image `postgres:17-alpine`
-  - persistent named volume
-  - healthcheck
-
-Example service names:
-
-```yaml
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: responses_app
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-```
-
-## Database Migrations
-
-Use one of these approaches:
-
-- Simple SQL migrations in `db/migrations`.
-- Or add a migration tool such as Drizzle, Prisma, Kysely, node-pg-migrate, or Knex.
-
-Recommended pragmatic path for this project:
-
-1. Add `db/migrations/0001_init.sql`.
-2. Add `scripts/migrate.ts` or `scripts/migrate.mjs`.
-3. Run migrations on container startup only through an explicit command:
-
-```bash
-pnpm migrate
-pnpm start
-```
-
-Avoid silently running migrations inside every web process unless the deployment model is single-instance and controlled.
-
-## GHCR Publishing
-
-### Image Name
-
-Use GitHub repository owner/name:
-
-```text
-ghcr.io/<owner>/<repo>:<tag>
-```
-
-Suggested tags:
-
-- `latest` for main branch.
-- Git SHA tag for immutable deploys.
-- Semver tag when pushing version tags.
-
-### GitHub Actions Workflow
-
-Create `.github/workflows/docker-ghcr.yml`:
-
-- Trigger:
-  - push to `main`
-  - push tags `v*.*.*`
-  - pull request build without push
-- Permissions:
-  - `contents: read`
-  - `packages: write`
-- Steps:
-  - checkout
-  - setup Docker Buildx
-  - login to GHCR using `GITHUB_TOKEN`
-  - build image
-  - push on main/tags
-
-### Required Repository Settings
-
-- GitHub Actions enabled.
-- Package visibility configured as desired.
-- Repository has permission to write packages.
+Admins should see metadata, status, usage, and policy results, but not decrypted user credentials.
 
 ## Security Checklist
 
-- Use HTTP-only, Secure, SameSite=Lax cookies.
-- Validate OIDC state, nonce, and PKCE.
-- Never trust role/group information from the browser.
-- Validate group claim shape, because providers may send string arrays, nested objects, or realm-specific structures.
-- Store session token hashes, not raw tokens.
-- Rotate `SESSION_SECRET` carefully.
-- Scope every database query by `user_id` unless route is admin-only.
-- Add rate limiting for login and chat turn endpoints.
-- Add CSRF protection for state-changing routes if cookie auth is used.
-- Do not expose `OPENAI_API_KEY` to the browser.
-- Audit admin quota changes.
+- Encrypt `api_key`, MCP secrets, connector tokens, and function secrets at rest.
+- Never expose decrypted secrets to the browser.
+- Never log decrypted secrets.
+- Scope every resource query by `user_id`.
+- Do not trust browser-provided upstream IDs.
+- Use local ownership tables as the bridge to upstream provider IDs.
+- Use per-user provider settings for every upstream API call.
+- Require auth on all file/vector-store/container-file routes.
+- Register generated code interpreter files before download.
+- Persist MCP approval decisions/audit events.
+- Execute custom functions server-side.
+- Add CSRF protection for state-changing routes.
+- Add rate limiting for credential updates and expensive tool calls.
+- Consider RLS for user-owned tables.
 
 ## Implementation Phases
 
-### Phase 1: Infrastructure Baseline
+### Phase 1: Credential and Provider Foundation
 
-- Add Dockerfile and `.dockerignore`.
-- Add `docker-compose.yml` with app and Postgres.
-- Add Postgres connection helper.
-- Add initial SQL migrations.
-- Add `DATABASE_URL` to `.env.example`.
+- Add encryption helper and `CREDENTIAL_ENCRYPTION_KEY` validation.
+- Add provider settings migration.
+- Add user provider settings APIs.
+- Refactor `createOpenAIClient` to accept a user/provider context.
+- Update model listing and `/api/turn_response` to use user provider settings.
 
-### Phase 2: OIDC Auth
+### Phase 2: Conversation Sidebar and Context Isolation
 
-- Add OIDC config env vars.
-- Add auth routes.
-- Add session storage in Postgres.
-- Add server helper:
-  - `getCurrentUser()`
-  - `requireUser()`
-  - `requireAdmin()`
-- Add auth middleware or route-level checks.
+- Add sidebar UI and conversation list state.
+- Implement create/select/rename/archive flows.
+- Ensure conversation switches fully replace local context.
+- Add stale-stream guards keyed by conversation ID.
+- Add tests for cross-conversation isolation.
 
-### Phase 3: Persistent Conversations
+### Phase 3: File, Vector Store, and Code Interpreter Isolation
 
-- Add conversation APIs.
-- Persist chat messages and API conversation items.
-- Update frontend store to hydrate from server.
-- Add conversation sidebar.
-- Ensure refresh restores current conversation.
+- Add file/vector-store/container-file metadata tables.
+- Require auth on all file/vector-store routes.
+- Map local IDs to upstream IDs server-side.
+- Validate ownership in file-search tool construction.
+- Register code interpreter generated files.
+- Protect container file downloads with ownership checks.
 
-### Phase 4: Quotas and Admin
+### Phase 4: User-Owned MCP and Function Configuration
 
-- Add quota tables and usage events.
-- Enforce quotas in `/api/turn_response`.
-- Add admin APIs.
-- Add admin UI.
+- Add MCP profile tables and APIs.
+- Add custom function tables and APIs.
+- Build tool definitions from server-owned user configuration.
+- Move function execution server-side.
+- Persist MCP approval events.
 
-### Phase 5: GHCR Release
+### Phase 5: Connector Credential Storage
 
-- Add GitHub Actions Docker workflow.
-- Build and push image to GHCR.
-- Document deployment with published image.
+- Move Google token storage into encrypted user-owned database rows.
+- Add connector status/revoke APIs.
+- Refresh connector tokens server-side.
+- Ensure connector tools are only emitted for the current user's active credential.
+
+### Phase 6: Admin Policy, Audit, and Hardening
+
+- Expand admin policy for provider domains, tools, files, MCP, functions, connectors, and code interpreter.
+- Add audit logs for credential/config changes.
+- Add rate limits and CSRF protections.
+- Add isolation tests and route-level regression tests.
 
 ## Open Questions
 
-- PocketID will be used as the OIDC provider.
-- PocketID group authorization uses the standard `groups` claim and `groups` scope.
-- Should admins be allowed to read full user conversations, or only usage/quota metadata?
-- Should vector store IDs be persisted per user and protected in the app database?
-- What are default daily/monthly request and token limits?
-- Should a user have multiple conversations, or only one active conversation per browser/session?
-- Should deployments run migrations automatically or through a separate release job?
+- Should each user have exactly one provider profile, or multiple named profiles?
+- Should `base_url` be unrestricted, admin-allowlisted, or limited to OpenAI-compatible trusted domains?
+- Should file/vector-store resources be shareable between conversations for the same user?
+- Should code interpreter generated files be downloadable across all of a user's conversations, or only from the originating conversation?
+- Which custom function execution modes are allowed first: HTTPS endpoint only, built-ins only, or both?
+- Should admins be able to see conversation content, or only usage/resource metadata?
+- What is the expected credential encryption key rotation process?
