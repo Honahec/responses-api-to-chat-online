@@ -75,12 +75,12 @@ These notes reflect the current repository state before implementing this plan.
 - [x] Added user-owned vector store and uploaded file metadata tables.
 - [x] Locked file-search routes behind auth and ownership checks.
 - [x] Registered code interpreter container files before allowing download.
+- [x] Added user-owned MCP profiles with encrypted secrets and persisted approval policy.
+- [x] Moved custom function definitions to user-owned configuration.
+- [x] Executed custom functions server-side under user/conversation policy.
 
 ### Pending
 
-- [ ] Add user-owned MCP profiles with encrypted secrets and persisted approval policy.
-- [ ] Move custom function definitions to user-owned configuration.
-- [ ] Execute custom functions server-side under user/conversation policy.
 - [ ] Move connector OAuth tokens into encrypted user-owned storage.
 - [ ] Update quota and admin policy to work with user-owned provider settings and tools.
 - [ ] Add tests for cross-user and cross-conversation isolation.
@@ -528,11 +528,11 @@ Admins should see metadata, status, usage, and policy results, but not decrypted
 
 ### Phase 4: User-Owned MCP and Function Configuration
 
-- Add MCP profile tables and APIs.
-- Add custom function tables and APIs.
-- Build tool definitions from server-owned user configuration.
-- Move function execution server-side.
-- Persist MCP approval events.
+- [x] Add MCP profile tables and APIs.
+- [x] Add custom function tables and APIs.
+- [x] Build tool definitions from server-owned user configuration.
+- [x] Move function execution server-side.
+- [x] Persist MCP approval events.
 
 ### Phase 5: Connector Credential Storage
 

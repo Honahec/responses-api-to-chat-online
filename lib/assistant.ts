@@ -3,7 +3,6 @@ import { handleTool } from "@/lib/tools/tools-handling";
 import useConversationStore from "@/stores/useConversationStore";
 import useToolsStore, { ToolsState } from "@/stores/useToolsStore";
 import { Annotation } from "@/components/annotations";
-import { functionsMap } from "@/config/functions";
 
 const normalizeAnnotation = (annotation: any): Annotation => ({
   ...annotation,
@@ -373,7 +372,7 @@ export const processMessages = async (
           ) {
             // Handle tool call (execute function)
             const toolResult = await handleTool(
-              toolCallMessage.name as keyof typeof functionsMap,
+              toolCallMessage.name as string,
               toolCallMessage.parsedArguments
             );
 

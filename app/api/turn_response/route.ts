@@ -7,6 +7,7 @@ import {
 } from "@/lib/openai";
 import { assertWithinQuota, recordRequestUsage } from "@/lib/quotas";
 import { getTools } from "@/lib/tools/tools";
+import { recordMcpApproval } from "@/lib/user-tools";
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +29,16 @@ export async function POST(request: Request) {
     const defaultModel = await getDefaultModelForUser(user.id);
     const model = toolsState?.selectedModel || defaultModel || MODEL;
     await assertWithinQuota({ userId: user.id, model, toolsState });
+    for (const item of Array.isArray(messages) ? messages : []) {
+      if (item?.type === "mcp_approval_response") {
+        await recordMcpApproval({
+          userId: user.id,
+          conversationId,
+          mcpProfileId: toolsState?.mcpConfig?.profile_id ?? null,
+          approved: Boolean(item.approve),
+        });
+      }
+    }
 
     const tools = await getTools(toolsState, user.id);
     await recordRequestUsage({ userId: user.id, conversationId, model });
