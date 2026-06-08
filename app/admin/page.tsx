@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 
 type User = {
@@ -166,9 +167,9 @@ export default function AdminPage() {
           <h1 className="text-2xl font-semibold text-stone-950">Admin</h1>
           <p className="text-sm text-stone-500">Users, quotas, and usage</p>
         </div>
-        <a href="/" className="text-sm text-stone-600 hover:text-stone-950">
+        <Link href="/" className="text-sm text-stone-600 hover:text-stone-950">
           Back to chat
-        </a>
+        </Link>
       </div>
 
       {error && (

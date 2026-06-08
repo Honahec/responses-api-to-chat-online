@@ -1,8 +1,7 @@
 import { createOpenAIClient } from "@/lib/openai";
 
-const openai = createOpenAIClient();
-
 export async function POST(request: Request) {
+  const openai = createOpenAIClient();
   const { vectorStoreId, fileId } = await request.json();
   try {
     const vectorStore = await openai.vectorStores.files.create(
