@@ -25,7 +25,13 @@ Required group mapping:
 ## Environment Variables
 
 ```env
-DATABASE_URL=postgres://app:app_password@postgres:5432/responses_app
+POSTGRES_DB=responses_app
+POSTGRES_USER=app
+POSTGRES_PASSWORD=replace-me
+POSTGRES_PORT=5432
+APP_PORT=3000
+DATABASE_URL=postgres://app:replace-me@localhost:5432/responses_app
+APP_DATABASE_URL=postgres://app:replace-me@postgres:5432/responses_app
 
 OIDC_ISSUER_URL=https://pocketid.example.com
 OIDC_CLIENT_ID=responses-chat
@@ -78,17 +84,10 @@ Example production compose override:
 services:
   app:
     image: ghcr.io/<owner>/<repo>:sha-<commit>
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgres://app:app_password@postgres:5432/responses_app
-      OIDC_ISSUER_URL: https://pocketid.example.com
-      OIDC_CLIENT_ID: responses-chat
-      OIDC_CLIENT_SECRET: replace-me
-      OIDC_REDIRECT_URI: https://your-app.example.com/api/auth/callback
-      OIDC_GROUPS_CLAIM: groups
-      OIDC_ADMIN_GROUP: superadmin
-      OIDC_USER_GROUP: chat_user
-      OPENAI_API_KEY: replace-me
-      OPENAI_BASE_URL: https://api.openai.com/v1
+      DATABASE_URL: ${APP_DATABASE_URL}
 ```
 
 Run migrations before rolling the app:

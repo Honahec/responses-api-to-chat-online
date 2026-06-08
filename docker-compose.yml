@@ -1,16 +1,14 @@
 services:
   postgres:
     image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: responses_app
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app_password
+    env_file:
+      - .env
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d responses_app"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -19,8 +17,10 @@ services:
     build:
       context: .
       target: migrator
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgres://app:app_password@postgres:5432/responses_app
+      DATABASE_URL: ${APP_DATABASE_URL:?APP_DATABASE_URL is required}
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,15 +29,12 @@ services:
     build:
       context: .
       target: runner
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgres://app:app_password@postgres:5432/responses_app
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/google/callback}
+      DATABASE_URL: ${APP_DATABASE_URL:?APP_DATABASE_URL is required}
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     depends_on:
       postgres:
         condition: service_healthy
