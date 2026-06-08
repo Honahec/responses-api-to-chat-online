@@ -35,10 +35,12 @@
 - [x] Enforced request-count, model allowlist, and tool allowlist quotas before Responses API calls.
 - [x] Added initial admin UI for users, quotas, and usage.
 - [x] Added GitHub Actions workflow for Docker builds and GHCR publishing.
+- [x] Documented Docker, PocketID OIDC, Postgres, and GHCR deployment.
 
 ### Pending
 
-- [ ] Confirm the OIDC provider and exact group claim path.
+- [x] Confirm the OIDC provider: PocketID.
+- [ ] Confirm the exact PocketID group claim path.
 - [x] Add database migrations and a migration runner.
 - [x] Add Postgres connection helpers.
 - [ ] Add repository functions.
@@ -52,7 +54,7 @@
 - [x] Add admin UI for users, quotas, usage, allowed models, and allowed tools.
 - [x] Add Dockerfile, `.dockerignore`, and Docker Compose files.
 - [x] Add GHCR publishing workflow.
-- [ ] Document production deployment and required environment variables.
+- [x] Document production deployment and required environment variables.
 
 ## Non-Goals
 

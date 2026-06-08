@@ -68,6 +68,9 @@ This app is meant to be used as a starting point to build a conversational assis
 
    The app will be available at [`http://localhost:3000`](http://localhost:3000).
 
+For Docker, PocketID OIDC, Postgres, and GHCR deployment details, see
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
+
 ## Tools
 
 This starter app shows how to use built-in tools, MCP servers, and first-party connectors with the Responses API.
