@@ -33,6 +33,7 @@
 - [x] Restore the latest server-persisted conversation after page refresh.
 - [x] Added admin user and per-user quota APIs.
 - [x] Enforced request-count, model allowlist, and tool allowlist quotas before Responses API calls.
+- [x] Added initial admin UI for users, quotas, and usage.
 
 ### Pending
 
@@ -47,7 +48,7 @@
 - [ ] Enforce per-user data isolation on every message API.
 - [x] Add quota enforcement before Responses API calls.
 - [x] Add admin APIs for users, quotas, usage, allowed models, and allowed tools.
-- [ ] Add admin UI for users, quotas, usage, allowed models, and allowed tools.
+- [x] Add admin UI for users, quotas, usage, allowed models, and allowed tools.
 - [x] Add Dockerfile, `.dockerignore`, and Docker Compose files.
 - [ ] Add GHCR publishing workflow.
 - [ ] Document production deployment and required environment variables.
