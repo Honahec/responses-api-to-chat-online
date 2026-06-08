@@ -22,18 +22,22 @@
 - [x] Defined the first-pass Postgres data model for users, sessions, conversations, messages, usage events, quotas, and system settings.
 - [x] Defined the Docker packaging and GHCR publishing direction.
 - [x] Added the `pg` runtime dependency to prepare for server-side Postgres access.
+- [x] Added initial Postgres migration, migration runner, and database helper.
+- [x] Added Dockerfile and Docker Compose baseline for app, migration, and Postgres services.
+- [x] Configured Next.js standalone output for container builds.
 
 ### Pending
 
 - [ ] Confirm the OIDC provider and exact group claim path.
-- [ ] Add database migrations and a migration runner.
-- [ ] Add Postgres connection helpers and repository functions.
+- [x] Add database migrations and a migration runner.
+- [x] Add Postgres connection helpers.
+- [ ] Add repository functions.
 - [ ] Implement OIDC login, callback, logout, and current-user APIs.
 - [ ] Replace in-memory/browser-only conversation state with server-persisted conversations.
 - [ ] Enforce per-user data isolation on every conversation and message API.
 - [ ] Add quota enforcement before Responses API calls.
 - [ ] Add admin APIs and admin UI for users, quotas, usage, allowed models, and allowed tools.
-- [ ] Add Dockerfile, `.dockerignore`, and Docker Compose files.
+- [x] Add Dockerfile, `.dockerignore`, and Docker Compose files.
 - [ ] Add GHCR publishing workflow.
 - [ ] Document production deployment and required environment variables.
 
