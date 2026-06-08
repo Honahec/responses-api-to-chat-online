@@ -12,10 +12,49 @@ export default function Assistant() {
     addConversationItem,
     addChatMessage,
     setActiveConversationId,
+    setChatMessages,
+    setConversationItems,
     setAssistantLoading,
   } =
     useConversationStore();
   const toolsState = useToolsStore();
+
+  React.useEffect(() => {
+    if (activeConversationId) return;
+
+    let cancelled = false;
+    const loadLatestConversation = async () => {
+      const listResponse = await fetch("/api/conversations");
+      if (!listResponse.ok) return;
+      const { conversations } = await listResponse.json();
+      const latest = conversations?.[0];
+      if (!latest?.id || cancelled) return;
+
+      const conversationResponse = await fetch(`/api/conversations/${latest.id}`);
+      if (!conversationResponse.ok || cancelled) return;
+      const { conversation } = await conversationResponse.json();
+      setActiveConversationId(conversation.id);
+      if (Array.isArray(conversation.chat_messages) && conversation.chat_messages.length > 0) {
+        setChatMessages(conversation.chat_messages);
+      }
+      if (Array.isArray(conversation.conversation_items)) {
+        setConversationItems(conversation.conversation_items);
+      }
+    };
+
+    loadLatestConversation().catch((error) => {
+      console.error("Error loading latest conversation:", error);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeConversationId,
+    setActiveConversationId,
+    setChatMessages,
+    setConversationItems,
+  ]);
 
   const ensureConversation = async () => {
     if (activeConversationId) return activeConversationId;

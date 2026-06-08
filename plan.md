@@ -29,6 +29,8 @@
 - [x] Added server-side session storage using Postgres-backed session hashes.
 - [x] Added user-scoped conversation APIs for listing, creating, loading, updating, archiving, and saving state.
 - [x] Bound Responses API turns to an authenticated user-owned conversation.
+- [x] Added PocketID login gate in the frontend.
+- [x] Restore the latest server-persisted conversation after page refresh.
 
 ### Pending
 
@@ -37,7 +39,7 @@
 - [x] Add Postgres connection helpers.
 - [ ] Add repository functions.
 - [x] Implement OIDC login, callback, logout, and current-user APIs.
-- [ ] Replace in-memory/browser-only conversation state with server-persisted conversations.
+- [x] Replace in-memory/browser-only conversation state with server-persisted conversations.
 - [x] Persist conversation snapshots after chat turns.
 - [x] Enforce per-user data isolation on every conversation API.
 - [ ] Enforce per-user data isolation on every message API.
