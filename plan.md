@@ -41,7 +41,7 @@
 ### Pending
 
 - [x] Confirm the OIDC provider: PocketID.
-- [ ] Confirm the exact PocketID group claim path.
+- [x] Confirm the PocketID group claim path: `groups`.
 - [x] Add database migrations and a migration runner.
 - [x] Add Postgres connection helpers.
 - [x] Add repository functions.
@@ -538,7 +538,7 @@ Create `.github/workflows/docker-ghcr.yml`:
 ## Open Questions
 
 - PocketID will be used as the OIDC provider.
-- What exact PocketID group claim path should be used: `groups` or a PocketID-specific mapped claim?
+- PocketID group authorization uses the standard `groups` claim and `groups` scope.
 - Should admins be allowed to read full user conversations, or only usage/quota metadata?
 - Should vector store IDs be persisted per user and protected in the app database?
 - What are default daily/monthly request and token limits?

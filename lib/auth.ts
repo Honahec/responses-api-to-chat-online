@@ -52,7 +52,7 @@ export function getOIDCEnv() {
     groupsClaim: env.OIDC_GROUPS_CLAIM || "groups",
     adminGroup: env.OIDC_ADMIN_GROUP || "superadmin",
     userGroup: env.OIDC_USER_GROUP || "chat_user",
-    scopes: env.OIDC_SCOPES || "openid email profile",
+    scopes: env.OIDC_SCOPES || "openid email profile groups",
   };
 }
 

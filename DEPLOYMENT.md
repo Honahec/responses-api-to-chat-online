@@ -11,11 +11,11 @@
 Create an OIDC client in PocketID and configure:
 
 - Redirect URI: `https://your-app.example.com/api/auth/callback`
-- Scopes: `openid email profile`
-- Group claim: configure PocketID to expose user groups in a claim that this app can read.
+- Scopes: `openid email profile groups`
+- Group claim: `groups`
 
-The app defaults to `OIDC_GROUPS_CLAIM=groups`. If your PocketID setup exposes
-groups under another claim path, set `OIDC_GROUPS_CLAIM` accordingly.
+The app defaults to `OIDC_GROUPS_CLAIM=groups`. PocketID client examples use
+the `groups` claim when the `groups` scope is requested.
 
 Required group mapping:
 
@@ -34,7 +34,7 @@ OIDC_REDIRECT_URI=https://your-app.example.com/api/auth/callback
 OIDC_GROUPS_CLAIM=groups
 OIDC_ADMIN_GROUP=superadmin
 OIDC_USER_GROUP=chat_user
-OIDC_SCOPES="openid email profile"
+OIDC_SCOPES="openid email profile groups"
 
 OPENAI_API_KEY=replace-me
 OPENAI_BASE_URL=https://api.openai.com/v1
