@@ -9,7 +9,8 @@ export default function Assistant() {
   const {
     activeConversationId,
     chatMessages,
-    addConversationItem,
+    conversationItems,
+    isAssistantLoading,
     addChatMessage,
     setActiveConversationId,
     setChatMessages,
@@ -76,7 +77,7 @@ export default function Assistant() {
   };
 
   const handleSendMessage = async (message: string) => {
-    if (!message.trim()) return;
+    if (!message.trim() || isAssistantLoading) return;
 
     const userItem: Item = {
       type: "message",
@@ -90,10 +91,11 @@ export default function Assistant() {
 
     try {
       await ensureConversation();
+      const nextConversationItems = [...conversationItems, userMessage];
       setAssistantLoading(true);
-      addConversationItem(userMessage);
+      setConversationItems(nextConversationItems);
       addChatMessage(userItem);
-      await processMessages();
+      await processMessages(nextConversationItems);
     } catch (error) {
       console.error("Error processing message:", error);
     }
@@ -110,8 +112,9 @@ export default function Assistant() {
     } as any;
     try {
       await ensureConversation();
-      addConversationItem(approvalItem);
-      await processMessages();
+      const nextConversationItems = [...conversationItems, approvalItem];
+      setConversationItems(nextConversationItems);
+      await processMessages(nextConversationItems);
     } catch (error) {
       console.error("Error sending approval response:", error);
     }

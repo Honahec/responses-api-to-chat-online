@@ -137,7 +137,7 @@ export const handleTurn = async (
   }
 };
 
-const saveConversationSnapshot = async () => {
+const saveConversationSnapshot = async (conversationItemsOverride?: any[]) => {
   const { activeConversationId, chatMessages, conversationItems } =
     useConversationStore.getState();
   if (!activeConversationId) return;
@@ -150,12 +150,12 @@ const saveConversationSnapshot = async () => {
       model: toolsState.selectedModel,
       toolsState,
       chatMessages,
-      conversationItems,
+      conversationItems: conversationItemsOverride ?? conversationItems,
     }),
   });
 };
 
-export const processMessages = async () => {
+export const processMessages = async (inputItems?: any[]) => {
   const {
     activeConversationId,
     chatMessages,
@@ -167,7 +167,7 @@ export const processMessages = async () => {
 
   const toolsState = useToolsStore.getState() as ToolsState;
 
-  const allConversationItems = conversationItems;
+  const allConversationItems = inputItems ?? conversationItems;
   if (!activeConversationId) {
     console.error("Cannot process messages without an active conversation");
     setAssistantLoading(false);
@@ -577,5 +577,5 @@ export const processMessages = async () => {
     }
   );
 
-  await saveConversationSnapshot();
+  await saveConversationSnapshot(allConversationItems);
 };
