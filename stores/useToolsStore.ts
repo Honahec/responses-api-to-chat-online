@@ -24,6 +24,7 @@ export type WebSearchConfig = {
 };
 
 export type McpConfig = {
+  profile_id?: string;
   server_label: string;
   server_url: string;
   allowed_tools: string;
@@ -83,6 +84,7 @@ const useToolsStore = create<StoreState>()(
         },
       },
       mcpConfig: {
+        profile_id: undefined,
         server_label: "",
         server_url: "",
         allowed_tools: "",

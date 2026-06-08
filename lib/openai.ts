@@ -1,15 +1,20 @@
 import OpenAI from "openai";
+import { getProviderCredentials } from "@/lib/provider-settings";
 
-const getOpenAIBaseURL = () => {
-  const baseURL = process.env.OPENAI_BASE_URL?.trim();
-  return baseURL ? baseURL.replace(/\/+$/, "") : undefined;
-};
-
-export const createOpenAIClient = () =>
-  new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: getOpenAIBaseURL(),
+export async function createOpenAIClientForUser(userId: string) {
+  const settings = await getProviderCredentials(userId);
+  return new OpenAI({
+    apiKey: settings.apiKey,
+    baseURL: settings.baseURL,
   });
+}
 
-export const getOpenAIAPIBaseURL = () =>
-  getOpenAIBaseURL() ?? "https://api.openai.com/v1";
+export async function getOpenAIAPIBaseURLForUser(userId: string) {
+  const settings = await getProviderCredentials(userId);
+  return settings.baseURL;
+}
+
+export async function getDefaultModelForUser(userId: string) {
+  const settings = await getProviderCredentials(userId);
+  return settings.defaultModel;
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
+import { recordAuditEvent } from "@/lib/audit";
 import { getUserQuota, getUserUsage, setUserQuota } from "@/lib/quotas";
 
 type RouteContext = {
@@ -24,7 +25,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
     const { id } = await context.params;
     const body = await request.json();
     const quota = await setUserQuota(id, {
@@ -38,6 +39,12 @@ export async function PUT(request: Request, context: RouteContext) {
       enabled_tools: Array.isArray(body.enabled_tools)
         ? body.enabled_tools
         : null,
+    });
+    await recordAuditEvent({
+      actorUserId: admin.id,
+      targetUserId: id,
+      action: "admin.quota.updated",
+      metadata: { quota },
     });
     return NextResponse.json({ quota });
   } catch (error) {

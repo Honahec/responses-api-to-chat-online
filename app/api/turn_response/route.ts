@@ -1,9 +1,14 @@
 import { getDeveloperPrompt, MODEL } from "@/config/constants";
 import { requireUser } from "@/lib/auth";
 import { getConversation } from "@/lib/conversations";
-import { createOpenAIClient } from "@/lib/openai";
+import {
+  createOpenAIClientForUser,
+  getDefaultModelForUser,
+} from "@/lib/openai";
 import { assertWithinQuota, recordRequestUsage } from "@/lib/quotas";
 import { getTools } from "@/lib/tools/tools";
+import { recordMcpApproval } from "@/lib/user-tools";
+import { assertToolsAllowedByAdminPolicy } from "@/lib/admin-policy";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +16,11 @@ export async function POST(request: Request) {
     const { conversationId, messages, toolsState } = await request.json();
     if (!conversationId) {
       return new Response(JSON.stringify({ error: "Missing conversationId" }), {
+        status: 400,
+      });
+    }
+    if (!toolsState) {
+      return new Response(JSON.stringify({ error: "Missing toolsState" }), {
         status: 400,
       });
     }
@@ -22,17 +32,29 @@ export async function POST(request: Request) {
       });
     }
 
-    const model = toolsState?.selectedModel || MODEL;
+    const defaultModel = await getDefaultModelForUser(user.id);
+    const model = toolsState?.selectedModel || defaultModel || MODEL;
+    await assertToolsAllowedByAdminPolicy(toolsState);
     await assertWithinQuota({ userId: user.id, model, toolsState });
+    for (const item of Array.isArray(messages) ? messages : []) {
+      if (item?.type === "mcp_approval_response") {
+        await recordMcpApproval({
+          userId: user.id,
+          conversationId,
+          mcpProfileId: toolsState?.mcpConfig?.profile_id ?? null,
+          approved: Boolean(item.approve),
+        });
+      }
+    }
 
-    const tools = await getTools(toolsState);
+    const tools = await getTools(toolsState, user.id);
     await recordRequestUsage({ userId: user.id, conversationId, model });
 
     console.log("Tools:", tools);
 
     console.log("Received messages:", messages);
 
-    const openai = createOpenAIClient();
+    const openai = await createOpenAIClientForUser(user.id);
 
     const events = await openai.responses.create({
       model,

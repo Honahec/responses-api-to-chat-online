@@ -1,23 +1,34 @@
-import { getOpenAIAPIBaseURL } from "@/lib/openai";
+import { requireUser } from "@/lib/auth";
+import { getUserContainerFile } from "@/lib/file-resources";
+import { getProviderCredentials } from "@/lib/provider-settings";
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const fileId = searchParams.get("file_id");
-  const containerId = searchParams.get("container_id");
-  const filename = searchParams.get("filename");
-  if (!fileId) {
-    return new Response(JSON.stringify({ error: "Missing file_id" }), {
-      status: 400,
-    });
-  }
   try {
-    const baseURL = getOpenAIAPIBaseURL();
+    const user = await requireUser();
+    const { searchParams } = new URL(request.url);
+    const fileId = searchParams.get("file_id");
+    const containerId = searchParams.get("container_id");
+    const filename = searchParams.get("filename");
+    if (!fileId) {
+      return new Response(JSON.stringify({ error: "Missing file_id" }), {
+        status: 400,
+      });
+    }
+    const containerFile = await getUserContainerFile({
+      userId: user.id,
+      providerFileId: fileId,
+      providerContainerId: containerId,
+    });
+    if (!containerFile) {
+      return Response.json({ error: "File not found" }, { status: 404 });
+    }
+    const credentials = await getProviderCredentials(user.id);
     const url = containerId
-      ? `${baseURL}/containers/${containerId}/files/${fileId}/content`
-      : `${baseURL}/container-files/${fileId}/content`;
+      ? `${credentials.baseURL}/containers/${containerId}/files/${fileId}/content`
+      : `${credentials.baseURL}/container-files/${fileId}/content`;
     const res = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${credentials.apiKey}`,
       },
     });
     if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
@@ -25,10 +36,11 @@ export async function GET(request: Request) {
     return new Response(blob, {
       headers: {
         "Content-Type": res.headers.get("Content-Type") || "application/octet-stream",
-        "Content-Disposition": `attachment; filename=${filename ?? fileId}`,
+        "Content-Disposition": `attachment; filename=${filename ?? containerFile.filename ?? fileId}`,
       },
     });
   } catch (err) {
+    if (err instanceof Response) return err;
     console.error("Error fetching container file", err);
     return new Response(JSON.stringify({ error: "Failed to fetch file" }), {
       status: 500,

@@ -68,21 +68,21 @@ These notes reflect the current repository state before implementing this plan.
 
 - [x] Audited the current auth, conversation, OpenAI client, file/vector-store, MCP, functions, connector token, and code interpreter paths.
 - [x] Rewrote this plan around per-user provider configuration and broader isolation boundaries.
+- [x] Added encrypted user provider settings for `base_url` and `api_key`.
+- [x] Refactored OpenAI client creation to require `userId` and load that user's decrypted provider settings server-side.
+- [x] Added multi-conversation sidebar and explicit conversation switching.
+- [x] Enforced conversation context isolation in frontend state and server APIs.
+- [x] Added user-owned vector store and uploaded file metadata tables.
+- [x] Locked file-search routes behind auth and ownership checks.
+- [x] Registered code interpreter container files before allowing download.
+- [x] Added user-owned MCP profiles with encrypted secrets and persisted approval policy.
+- [x] Moved custom function definitions to user-owned configuration.
+- [x] Executed custom functions server-side under user/conversation policy.
+- [x] Moved connector OAuth tokens into encrypted user-owned storage.
+- [x] Updated quota and admin policy to work with user-owned provider settings and tools.
 
 ### Pending
 
-- [ ] Add encrypted user provider settings for `base_url` and `api_key`.
-- [ ] Refactor OpenAI client creation to require `userId` and load that user's decrypted provider settings server-side.
-- [ ] Add multi-conversation sidebar and explicit conversation switching.
-- [ ] Enforce conversation context isolation in frontend state and server APIs.
-- [ ] Add user-owned vector store and uploaded file metadata tables.
-- [ ] Lock file-search routes behind auth and ownership checks.
-- [ ] Register code interpreter container files before allowing download.
-- [ ] Add user-owned MCP profiles with encrypted secrets and persisted approval policy.
-- [ ] Move custom function definitions to user-owned configuration.
-- [ ] Execute custom functions server-side under user/conversation policy.
-- [ ] Move connector OAuth tokens into encrypted user-owned storage.
-- [ ] Update quota and admin policy to work with user-owned provider settings and tools.
 - [ ] Add tests for cross-user and cross-conversation isolation.
 
 ## Architecture
@@ -503,50 +503,50 @@ Admins should see metadata, status, usage, and policy results, but not decrypted
 
 ### Phase 1: Credential and Provider Foundation
 
-- Add encryption helper and `CREDENTIAL_ENCRYPTION_KEY` validation.
-- Add provider settings migration.
-- Add user provider settings APIs.
-- Refactor `createOpenAIClient` to accept a user/provider context.
-- Update model listing and `/api/turn_response` to use user provider settings.
+- [x] Add encryption helper and `CREDENTIAL_ENCRYPTION_KEY` validation.
+- [x] Add provider settings migration.
+- [x] Add user provider settings APIs.
+- [x] Refactor `createOpenAIClient` to accept a user/provider context.
+- [x] Update model listing and `/api/turn_response` to use user provider settings.
 
 ### Phase 2: Conversation Sidebar and Context Isolation
 
-- Add sidebar UI and conversation list state.
-- Implement create/select/rename/archive flows.
-- Ensure conversation switches fully replace local context.
-- Add stale-stream guards keyed by conversation ID.
-- Add tests for cross-conversation isolation.
+- [x] Add sidebar UI and conversation list state.
+- [x] Implement create/select/rename/archive flows.
+- [x] Ensure conversation switches fully replace local context.
+- [x] Add stale-stream guards keyed by conversation ID.
+- [ ] Add tests for cross-conversation isolation.
 
 ### Phase 3: File, Vector Store, and Code Interpreter Isolation
 
-- Add file/vector-store/container-file metadata tables.
-- Require auth on all file/vector-store routes.
-- Map local IDs to upstream IDs server-side.
-- Validate ownership in file-search tool construction.
-- Register code interpreter generated files.
-- Protect container file downloads with ownership checks.
+- [x] Add file/vector-store/container-file metadata tables.
+- [x] Require auth on all file/vector-store routes.
+- [x] Map local IDs to upstream IDs server-side.
+- [x] Validate ownership in file-search tool construction.
+- [x] Register code interpreter generated files.
+- [x] Protect container file downloads with ownership checks.
 
 ### Phase 4: User-Owned MCP and Function Configuration
 
-- Add MCP profile tables and APIs.
-- Add custom function tables and APIs.
-- Build tool definitions from server-owned user configuration.
-- Move function execution server-side.
-- Persist MCP approval events.
+- [x] Add MCP profile tables and APIs.
+- [x] Add custom function tables and APIs.
+- [x] Build tool definitions from server-owned user configuration.
+- [x] Move function execution server-side.
+- [x] Persist MCP approval events.
 
 ### Phase 5: Connector Credential Storage
 
-- Move Google token storage into encrypted user-owned database rows.
-- Add connector status/revoke APIs.
-- Refresh connector tokens server-side.
-- Ensure connector tools are only emitted for the current user's active credential.
+- [x] Move Google token storage into encrypted user-owned database rows.
+- [x] Add connector status/revoke APIs.
+- [x] Refresh connector tokens server-side.
+- [x] Ensure connector tools are only emitted for the current user's active credential.
 
 ### Phase 6: Admin Policy, Audit, and Hardening
 
-- Expand admin policy for provider domains, tools, files, MCP, functions, connectors, and code interpreter.
-- Add audit logs for credential/config changes.
-- Add rate limits and CSRF protections.
-- Add isolation tests and route-level regression tests.
+- [x] Expand admin policy for provider domains, tools, files, MCP, functions, connectors, and code interpreter.
+- [x] Add audit logs for credential/config changes.
+- [ ] Add rate limits and CSRF protections.
+- [ ] Add isolation tests and route-level regression tests.
 
 ## Open Questions
 
